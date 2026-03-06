@@ -153,7 +153,7 @@ const Modal = ({ open, onClose, title, children }) => {
   return (
     <div style={{ position: "fixed", inset: 0, background: "#000A", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
       onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 20, padding: 28, width: "100%", maxWidth: 480, maxHeight: "90vh", overflowY: "auto" }}>
+      <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 20, padding: "24px 20px", width: "100%", maxWidth: 480, maxHeight: "92vh", overflowY: "auto", margin: "0 8px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
           <h3 style={{ color: C.text, margin: 0, fontSize: 18, fontWeight: 700 }}>{title}</h3>
           <button onClick={onClose} style={{ background: C.border, border: "none", color: C.muted, borderRadius: 8, width: 32, height: 32, cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
@@ -384,7 +384,7 @@ function Dashboard({ data, setData }) {
 
       {/* ── Master Account ── */}
       <div style={{ background: `linear-gradient(135deg, ${C.accent}22 0%, ${C.purple}22 100%)`, border: `1px solid ${C.accent}40`, borderRadius: 20, padding: 24 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 20 }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
               <span style={{ fontSize: 22 }}>💳</span>
@@ -579,7 +579,7 @@ function Dashboard({ data, setData }) {
       </div>
 
       {/* Charts Row */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 16 }}>
         {/* Income vs Expense vs Investment with range toggle */}
         <Card>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
@@ -757,7 +757,7 @@ function Transactions({ data, setData }) {
       </div>
 
       {/* Summary pills */}
-      <div style={{ display: "flex", gap: 12 }}>
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
         {[
           { label: "Income", value: data.transactions.filter(t=>t.type==="income").reduce((s,t)=>s+t.amount,0), color: C.green },
           { label: "Expenses", value: data.transactions.filter(t=>t.type==="expense").reduce((s,t)=>s+t.amount,0), color: C.red },
@@ -772,7 +772,8 @@ function Transactions({ data, setData }) {
       </div>
 
       <Card style={{ padding: 0, overflow: "hidden" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 520 }}>
           <thead>
             <tr style={{ background: C.bg }}>
               {["Date", "Category", "Type", "Note", "Amount", ""].map(h => (
@@ -799,6 +800,7 @@ function Transactions({ data, setData }) {
             ))}
           </tbody>
         </table>
+        </div>
       </Card>
 
       <Modal open={modal} onClose={() => setModal(false)} title="Add Transaction">
@@ -965,13 +967,13 @@ function Assets({ data, setData }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 16 }}>
         <StatCard label="Total Assets" value={fmt(totalAssets)} icon="trend_up" color={C.green} />
         <StatCard label="Total Liabilities" value={fmt(totalLiab)} icon="trend_down" color={C.red} />
         <StatCard label="Net Worth" value={fmt(netWorth)} icon="star" color={netWorth >= 0 ? C.accent : C.red} />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16 }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <h3 style={{ color: C.green, margin: 0, fontSize: 16 }}>Assets</h3>
@@ -1170,7 +1172,7 @@ function Plans({ data, setData }) {
       </div>
 
       {/* Summary cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 16 }}>
         <StatCard label="Total Goal Target" value={fmt(totalGoalTarget)} icon="flag" color={C.accent} />
         <StatCard label="Total Saved Toward Goals" value={fmt(totalGoalSaved)} icon="trend_up" color={C.green} />
         <StatCard label="Wishlist Total" value={fmt(totalWishlist)} icon="gift" color={C.purple} />
@@ -1483,6 +1485,14 @@ export default function App() {
   const [tab, setTab] = useState("dashboard");
   const [data, setData] = useState(null);
   const [dataLoading, setDataLoading] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, []);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (firebaseUser) => {
@@ -1562,53 +1572,116 @@ export default function App() {
     );
   }
 
+  // Close sidebar when tab changes on mobile
+  const handleTabChange = (id) => { setTab(id); setSidebarOpen(false); };
+
   return (
     <div style={{ minHeight: "100vh", background: C.bg, color: C.text, fontFamily: "'Sora', 'DM Sans', sans-serif", display: "flex" }}>
       <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=DM+Mono&display=swap" rel="stylesheet" />
+      <style>{`
+        * { box-sizing: border-box; }
+        body { margin: 0; overflow-x: hidden; }
+        ::-webkit-scrollbar { width: 4px; } 
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #1E2D42; border-radius: 4px; }
+      `}</style>
 
-      {/* Sidebar */}
-      <div style={{ width: 240, background: C.surface, borderRight: `1px solid ${C.border}`, display: "flex", flexDirection: "column", padding: "24px 16px", position: "fixed", top: 0, bottom: 0, left: 0, zIndex: 10 }}>
-        <div style={{ marginBottom: 32 }}>
-          <div style={{ fontSize: 22, fontWeight: 800, color: C.text, letterSpacing: -0.5 }}>💰 FinanceOS</div>
-          <div style={{ color: C.muted, fontSize: 12, marginTop: 2 }}>Personal Finance Tracker</div>
-        </div>
-
-        <nav style={{ flex: 1, display: "flex", flexDirection: "column", gap: 4 }}>
-          {TABS.map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)}
-              style={{
-                display: "flex", alignItems: "center", gap: 12, padding: "11px 14px",
-                borderRadius: 10, border: "none", cursor: "pointer", fontFamily: "inherit",
-                fontWeight: 600, fontSize: 14, transition: "all 0.15s",
-                background: tab === t.id ? C.accent + "20" : "transparent",
-                color: tab === t.id ? C.accent : C.muted,
-                borderLeft: tab === t.id ? `3px solid ${C.accent}` : "3px solid transparent"
-              }}>
-              <Icon name={t.icon} size={18} color={tab === t.id ? C.accent : C.muted} />
-              {t.label}
-            </button>
-          ))}
-        </nav>
-
-        <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 16 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 4px", marginBottom: 8 }}>
-            <div style={{ width: 36, height: 36, borderRadius: "50%", background: C.accentDim, display: "flex", alignItems: "center", justifyContent: "center", color: C.accent, fontWeight: 700, fontSize: 14 }}>
-              {user.avatar}
-            </div>
-            <div>
-              <div style={{ color: C.text, fontSize: 13, fontWeight: 600 }}>{user.name}</div>
-              <div style={{ color: C.muted, fontSize: 11 }}>{user.email}</div>
-            </div>
+      {/* ── DESKTOP SIDEBAR ── */}
+      {!isMobile && (
+        <div style={{ width: 240, background: C.surface, borderRight: `1px solid ${C.border}`, display: "flex", flexDirection: "column", padding: "24px 16px", position: "fixed", top: 0, bottom: 0, left: 0, zIndex: 10 }}>
+          <div style={{ marginBottom: 32 }}>
+            <div style={{ fontSize: 22, fontWeight: 800, color: C.text, letterSpacing: -0.5 }}>💰 FinanceOS</div>
+            <div style={{ color: C.muted, fontSize: 12, marginTop: 2 }}>Personal Finance Tracker</div>
           </div>
-          <button onClick={handleSignOut}
-            style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "9px 14px", background: "transparent", border: `1px solid ${C.border}`, borderRadius: 8, color: C.muted, cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>
-            <Icon name="logout" size={15} /> Sign Out
+          <nav style={{ flex: 1, display: "flex", flexDirection: "column", gap: 4 }}>
+            {TABS.map(t => (
+              <button key={t.id} onClick={() => setTab(t.id)}
+                style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 14px", borderRadius: 10, border: "none", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 14, transition: "all 0.15s", background: tab === t.id ? C.accent + "20" : "transparent", color: tab === t.id ? C.accent : C.muted, borderLeft: tab === t.id ? `3px solid ${C.accent}` : "3px solid transparent" }}>
+                <Icon name={t.icon} size={18} color={tab === t.id ? C.accent : C.muted} />
+                {t.label}
+              </button>
+            ))}
+          </nav>
+          <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 4px", marginBottom: 8 }}>
+              <div style={{ width: 36, height: 36, borderRadius: "50%", background: C.accentDim, display: "flex", alignItems: "center", justifyContent: "center", color: C.accent, fontWeight: 700, fontSize: 14 }}>
+                {user.avatar}
+              </div>
+              <div>
+                <div style={{ color: C.text, fontSize: 13, fontWeight: 600 }}>{user.name}</div>
+                <div style={{ color: C.muted, fontSize: 11 }}>{user.email}</div>
+              </div>
+            </div>
+            <button onClick={handleSignOut} style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "9px 14px", background: "transparent", border: `1px solid ${C.border}`, borderRadius: 8, color: C.muted, cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>
+              <Icon name="logout" size={15} /> Sign Out
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── MOBILE TOP BAR ── */}
+      {isMobile && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 50, background: C.surface, borderBottom: `1px solid ${C.border}`, padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ fontSize: 18, fontWeight: 800, color: C.text }}>💰 FinanceOS</div>
+          <button onClick={() => setSidebarOpen(o => !o)} style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 8, padding: "6px 10px", color: C.text, cursor: "pointer", fontSize: 20, lineHeight: 1 }}>
+            {sidebarOpen ? "✕" : "☰"}
           </button>
         </div>
-      </div>
+      )}
 
-      {/* Main Content */}
-      <main style={{ marginLeft: 240, flex: 1, padding: 32, minHeight: "100vh", overflowY: "auto" }}>
+      {/* ── MOBILE SLIDE-DOWN MENU ── */}
+      {isMobile && sidebarOpen && (
+        <>
+          {/* backdrop */}
+          <div onClick={() => setSidebarOpen(false)} style={{ position: "fixed", inset: 0, background: "#000A", zIndex: 40 }} />
+          <div style={{ position: "fixed", top: 57, left: 0, right: 0, background: C.surface, borderBottom: `1px solid ${C.border}`, zIndex: 45, padding: "8px 12px 16px" }}>
+            {TABS.map(t => (
+              <button key={t.id} onClick={() => handleTabChange(t.id)}
+                style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", padding: "13px 14px", borderRadius: 10, border: "none", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 15, marginBottom: 4, background: tab === t.id ? C.accent + "20" : "transparent", color: tab === t.id ? C.accent : C.muted }}>
+                <Icon name={t.icon} size={20} color={tab === t.id ? C.accent : C.muted} />
+                {t.label}
+              </button>
+            ))}
+            <div style={{ borderTop: `1px solid ${C.border}`, marginTop: 8, paddingTop: 12, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 32, height: 32, borderRadius: "50%", background: C.accentDim, display: "flex", alignItems: "center", justifyContent: "center", color: C.accent, fontWeight: 700, fontSize: 13 }}>{user.avatar}</div>
+                <div>
+                  <div style={{ color: C.text, fontSize: 13, fontWeight: 600 }}>{user.name}</div>
+                  <div style={{ color: C.muted, fontSize: 11 }}>{user.email}</div>
+                </div>
+              </div>
+              <button onClick={handleSignOut} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 12px", background: "transparent", border: `1px solid ${C.border}`, borderRadius: 8, color: C.muted, cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>
+                <Icon name="logout" size={14} /> Sign Out
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ── MOBILE BOTTOM TAB BAR ── */}
+      {isMobile && (
+        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50, background: C.surface, borderTop: `1px solid ${C.border}`, display: "flex", padding: "6px 0 calc(6px + env(safe-area-inset-bottom))" }}>
+          {TABS.map(t => (
+            <button key={t.id} onClick={() => handleTabChange(t.id)}
+              style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "6px 4px", border: "none", background: "transparent", cursor: "pointer", color: tab === t.id ? C.accent : C.muted, fontFamily: "inherit", transition: "all 0.15s" }}>
+              <div style={{ padding: "4px 12px", borderRadius: 10, background: tab === t.id ? C.accent + "20" : "transparent", transition: "all 0.15s" }}>
+                <Icon name={t.icon} size={20} color={tab === t.id ? C.accent : C.muted} />
+              </div>
+              <span style={{ fontSize: 10, fontWeight: tab === t.id ? 700 : 500 }}>{t.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* ── MAIN CONTENT ── */}
+      <main style={{
+        marginLeft: isMobile ? 0 : 240,
+        flex: 1,
+        padding: isMobile ? "72px 14px 90px" : 32,
+        minHeight: "100vh",
+        overflowY: "auto",
+        width: "100%",
+      }}>
         {tab === "dashboard" && <Dashboard data={data} setData={setData} />}
         {tab === "transactions" && <Transactions data={data} setData={setData} />}
         {tab === "budget" && <Budget data={data} setData={setData} />}
