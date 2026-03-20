@@ -1688,7 +1688,7 @@ export default function App() {
 
       {/* ── DESKTOP SIDEBAR ── */}
       {!isMobile && (
-        <div style={{ width: 240, background: C.surface, position: "relative", zIndex: 2,, borderRight: `1px solid ${C.border}`, display: "flex", flexDirection: "column", padding: "24px 16px", position: "fixed", top: 0, bottom: 0, left: 0, zIndex: 10 }}>
+        <div style={{ width: 240, background: C.surface, borderRight: `1px solid ${C.border}`, display: "flex", flexDirection: "column", padding: "24px 16px", position: "fixed", top: 0, bottom: 0, left: 0, zIndex: 10 }}>
           <div style={{ marginBottom: 32 }}>
             <div style={{ fontSize: 22, fontWeight: 800, color: C.text, letterSpacing: -0.5 }}>💰 FinanceOS</div>
             <div style={{ color: C.muted, fontSize: 12, marginTop: 2 }}>Personal Finance Tracker</div>
