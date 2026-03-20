@@ -88,6 +88,8 @@ const initState = () => ({
   masterAdjustment: 0,
   // Track which auto-payment months have already been processed: "name-YYYY-MM"
   autopaymentLog: [],
+  // Custom categories per type
+  customCategories: { expense: [], income: [], asset: [], liability: [] },
 });
 
 // ─── ICONS ────────────────────────────────────────────────────────────────────
@@ -116,8 +118,8 @@ const Icon = ({ name, size = 18, color = "currentColor" }) => {
 };
 
 // ─── COMPONENTS ───────────────────────────────────────────────────────────────
-const Card = ({ children, style = {} }) => (
-  <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: 24, ...style }}>
+const Card = ({ children, style = {}, glow }) => (
+  <div style={{ background: C.card, border: `1px solid ${glow ? glow + "40" : C.border}`, borderRadius: 16, padding: 24, boxShadow: glow ? `0 0 28px ${glow}20` : "none", transition: "box-shadow 0.3s", ...style }}>
     {children}
   </div>
 );
@@ -129,23 +131,29 @@ const Badge = ({ children, color = C.accent }) => (
 );
 
 const StatCard = ({ label, value, icon, color, change }) => (
-  <Card style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+  <Card glow={color} style={{ display: "flex", flexDirection: "column", gap: 12, position: "relative", overflow: "hidden" }}>
+    <div style={{ position: "absolute", top: -20, right: -20, width: 80, height: 80, borderRadius: "50%", background: color + "15", filter: "blur(20px)" }} />
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-      <div style={{ background: color + "20", borderRadius: 10, padding: 10, display: "flex" }}>
+      <div style={{ background: `linear-gradient(135deg, ${color}30, ${color}15)`, borderRadius: 12, padding: 10, display: "flex", border: `1px solid ${color}30` }}>
         <Icon name={icon} color={color} size={20} />
       </div>
       {change !== undefined && (
-        <div style={{ display: "flex", alignItems: "center", gap: 4, color: change >= 0 ? C.green : C.red, fontSize: 13 }}>
-          <Icon name={change >= 0 ? "trend_up" : "trend_down"} size={14} color={change >= 0 ? C.green : C.red} />
+        <div style={{ display: "flex", alignItems: "center", gap: 4, color: change >= 0 ? C.green : C.red, fontSize: 12, background: (change >= 0 ? C.green : C.red) + "15", padding: "3px 8px", borderRadius: 20 }}>
+          <Icon name={change >= 0 ? "trend_up" : "trend_down"} size={12} color={change >= 0 ? C.green : C.red} />
           {Math.abs(change)}%
         </div>
       )}
     </div>
     <div>
-      <div style={{ color: C.muted, fontSize: 13, marginBottom: 4 }}>{label}</div>
-      <div style={{ color: C.text, fontSize: 24, fontWeight: 700, fontFamily: "'DM Mono', monospace" }}>{value}</div>
+      <div style={{ color: C.muted, fontSize: 12, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
+      <div style={{ color, fontSize: 22, fontWeight: 800, fontFamily: "'DM Mono', monospace", letterSpacing: -0.5 }}>{value}</div>
     </div>
   </Card>
+);
+
+// Gradient orbs for visual flair
+const Orb = ({ color, size = 300, top, left, right, bottom, opacity = 0.12 }) => (
+  <div style={{ position: "fixed", width: size, height: size, borderRadius: "50%", background: `radial-gradient(circle, ${color}, transparent 70%)`, opacity, pointerEvents: "none", zIndex: 0, top, left, right, bottom, filter: "blur(40px)" }} />
 );
 
 const Modal = ({ open, onClose, title, children }) => {
@@ -724,18 +732,33 @@ function Dashboard({ data, setData }) {
 // ─── TRANSACTIONS ─────────────────────────────────────────────────────────────
 function Transactions({ data, setData }) {
   const [modal, setModal] = useState(false);
+  const [catModal, setCatModal] = useState(false);
+  const [catType, setCatType] = useState("expense");
+  const [newCat, setNewCat] = useState("");
   const [form, setForm] = useState({ type: "expense", category: "", amount: "", date: toYMD(new Date()), note: "" });
 
-  // When type changes, populate categories from relevant data
+  const custom = data.customCategories || { expense: [], income: [], asset: [], liability: [] };
+
+  // When type changes, populate categories from relevant data + custom ones
   const getCategories = () => {
-    if (form.type === "income") return INCOME_CATS;
+    if (form.type === "income") return [...INCOME_CATS, ...(custom.income || [])];
     if (form.type === "investment") return data.assets.length > 0
       ? data.assets.map(a => a.name)
       : ["Mutual Funds", "Stocks", "FD", "Gold", "Crypto", "Other"];
     if (form.type === "liability_payment") return data.liabilities.length > 0
       ? data.liabilities.map(l => l.name)
       : ["Education Loan", "Credit Card", "Car Loan", "Other"];
-    return EXPENSE_CATS;
+    return [...EXPENSE_CATS, ...(custom.expense || [])];
+  };
+
+  const addCustomCat = () => {
+    if (!newCat.trim()) return;
+    setData(d => ({ ...d, customCategories: { ...(d.customCategories || {}), [catType]: [...((d.customCategories || {})[catType] || []), newCat.trim()] } }));
+    setNewCat("");
+  };
+
+  const delCustomCat = (type, cat) => {
+    setData(d => ({ ...d, customCategories: { ...(d.customCategories || {}), [type]: ((d.customCategories || {})[type] || []).filter(c => c !== cat) } }));
   };
 
   const typeColor = { income: C.green, expense: C.red, investment: C.purple, liability_payment: C.orange };
@@ -751,9 +774,12 @@ function Transactions({ data, setData }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
         <h2 style={{ color: C.text, margin: 0, fontSize: 22, fontWeight: 700 }}>Transactions</h2>
-        <Btn onClick={() => setModal(true)}><Icon name="plus" size={16} color="#0A0E1A" /> Add Transaction</Btn>
+        <div style={{ display: "flex", gap: 10 }}>
+          <Btn variant="ghost" size="sm" onClick={() => setCatModal(true)}><Icon name="edit" size={14} color={C.muted} /> Categories</Btn>
+          <Btn onClick={() => setModal(true)}><Icon name="plus" size={16} color="#0A0E1A" /> Add</Btn>
+        </div>
       </div>
 
       {/* Summary pills */}
@@ -802,6 +828,39 @@ function Transactions({ data, setData }) {
         </table>
         </div>
       </Card>
+
+      {/* Manage Categories Modal */}
+      <Modal open={catModal} onClose={() => setCatModal(false)} title="Manage Categories">
+        <Select label="Category Type" value={catType} onChange={e => setCatType(e.target.value)}>
+          <option value="expense">💸 Expense Categories</option>
+          <option value="income">💰 Income Categories</option>
+        </Select>
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ color: C.muted, fontSize: 12, marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.5 }}>Built-in</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {(catType === "income" ? INCOME_CATS : EXPENSE_CATS).map(c => (
+              <span key={c} style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 20, padding: "4px 12px", color: C.muted, fontSize: 12 }}>{c}</span>
+            ))}
+          </div>
+        </div>
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ color: C.muted, fontSize: 12, marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.5 }}>Your Custom Categories</div>
+          {((custom[catType] || []).length === 0) && <div style={{ color: C.muted, fontSize: 13 }}>No custom categories yet.</div>}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {(custom[catType] || []).map(c => (
+              <span key={c} style={{ background: C.accent + "15", border: `1px solid ${C.accent}30`, borderRadius: 20, padding: "4px 12px", color: C.accent, fontSize: 12, display: "flex", alignItems: "center", gap: 6 }}>
+                {c}
+                <button onClick={() => delCustomCat(catType, c)} style={{ background: "none", border: "none", cursor: "pointer", color: C.muted, padding: 0, fontSize: 14, lineHeight: 1 }}>×</button>
+              </span>
+            ))}
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <input value={newCat} onChange={e => setNewCat(e.target.value)} onKeyDown={e => e.key === "Enter" && addCustomCat()} placeholder="Add new category..." style={{ flex: 1, background: C.bg, border: `1px solid ${C.border}`, borderRadius: 10, padding: "10px 14px", color: C.text, fontSize: 14, outline: "none" }} />
+          <Btn onClick={addCustomCat}><Icon name="plus" size={15} color="#0A0E1A" /></Btn>
+        </div>
+        <div style={{ color: C.muted, fontSize: 11, marginTop: 8 }}>Press Enter or click + to add</div>
+      </Modal>
 
       <Modal open={modal} onClose={() => setModal(false)} title="Add Transaction">
         <Select label="Type" value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value, category: "" }))}>
@@ -926,6 +985,9 @@ function Budget({ data, setData }) {
 function Assets({ data, setData }) {
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState({ name: "", category: "", value: "", rate: "", note: "" });
+  const custom = data.customCategories || { expense: [], income: [], asset: [], liability: [] };
+  const allAssetCats = [...ASSET_CATS, ...(custom.asset || [])];
+  const allLiabCats = [...LIABILITY_CATS, ...(custom.liability || [])];
 
   // Sum all investment transactions for a given asset name
   const getInvestedAmount = (assetName) =>
@@ -977,11 +1039,11 @@ function Assets({ data, setData }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <h3 style={{ color: C.green, margin: 0, fontSize: 16 }}>Assets</h3>
-            <Btn size="sm" onClick={() => { setForm({ name: "", category: ASSET_CATS[0], value: "", rate: "", note: "" }); setModal("asset"); }}>
+            <Btn size="sm" onClick={() => { setForm({ name: "", category: allAssetCats[0], value: "", rate: "", note: "" }); setModal("asset"); }}>
               <Icon name="plus" size={14} color="#0A0E1A" /> Add
             </Btn>
           </div>
-          {data.assets.map(a => {
+          {[...data.assets].sort((a, b) => effectiveValue(b) - effectiveValue(a)).map(a => {
             const invested = getInvestedAmount(a.name);
             const total = effectiveValue(a);
             return (
@@ -1015,7 +1077,7 @@ function Assets({ data, setData }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <h3 style={{ color: C.red, margin: 0, fontSize: 16 }}>Liabilities</h3>
-            <Btn size="sm" onClick={() => { setForm({ name: "", category: LIABILITY_CATS[0], value: "", rate: "", note: "" }); setModal("liability"); }}>
+            <Btn size="sm" onClick={() => { setForm({ name: "", category: allLiabCats[0], value: "", rate: "", note: "" }); setModal("liability"); }}>
               <Icon name="plus" size={14} color="#0A0E1A" /> Add
             </Btn>
           </div>
@@ -1096,7 +1158,7 @@ function Assets({ data, setData }) {
       <Modal open={!!modal} onClose={() => setModal(null)} title={modal === "asset" ? "Add Asset" : "Add Liability"}>
         <Input label="Name" placeholder={modal === "asset" ? "e.g. SBI Savings Account" : "e.g. Car Loan"} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
         <Select label="Category" value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>
-          {(modal === "asset" ? ASSET_CATS : LIABILITY_CATS).map(c => <option key={c}>{c}</option>)}
+          {(modal === "asset" ? allAssetCats : allLiabCats).map(c => <option key={c}>{c}</option>)}
         </Select>
         <Input label={modal === "liability" ? "Outstanding Amount (₹)" : "Current Value (₹)"} type="number" placeholder="0" value={form.value} onChange={e => setForm(f => ({ ...f, value: e.target.value }))} />
         {modal === "liability" && <Input label="Interest Rate (% APR, optional)" type="number" placeholder="0" value={form.rate} onChange={e => setForm(f => ({ ...f, rate: e.target.value }))} />}
@@ -1114,21 +1176,24 @@ function Assets({ data, setData }) {
 function Plans({ data, setData }) {
   const [goalModal, setGoalModal] = useState(false);
   const [wishModal, setWishModal] = useState(false);
-  const [editGoal, setEditGoal] = useState(null); // goal being edited for progress update
-  const [goalForm, setGoalForm] = useState({ title: "", targetAmount: "", savedAmount: "", deadline: "", priority: "medium", note: "" });
-  const [wishForm, setWishForm] = useState({ name: "", amount: "", priority: "medium", note: "" });
+  const [editGoal, setEditGoal] = useState(null);
+  const [goalForm, setGoalForm] = useState({ title: "", targetAmount: "", savedAmount: "", deadline: "", priority: "medium", note: "", emoji: "🎯" });
+  const [wishForm, setWishForm] = useState({ name: "", amount: "", priority: "medium", note: "", emoji: "🛍️" });
   const [progressForm, setProgressForm] = useState({ savedAmount: "" });
+  const [activeTab, setActiveTab] = useState("goals");
 
   const plans = data.plans || { goals: [], wishlist: [] };
-
   const updatePlans = (updated) => setData(d => ({ ...d, plans: updated }));
+
+  const GOAL_EMOJIS = ["🎯","🏠","🚗","✈️","💍","📱","💪","🎓","🏦","🌟","🏖️","🎸"];
+  const WISH_EMOJIS = ["🛍️","📱","💻","🎮","👟","⌚","📷","🎧","🚲","📚","🎨","✨"];
 
   const addGoal = () => {
     if (!goalForm.title || !goalForm.targetAmount) return;
     const newGoal = { ...goalForm, id: uid(), targetAmount: parseFloat(goalForm.targetAmount), savedAmount: parseFloat(goalForm.savedAmount) || 0 };
     updatePlans({ ...plans, goals: [...plans.goals, newGoal] });
     setGoalModal(false);
-    setGoalForm({ title: "", targetAmount: "", savedAmount: "", deadline: "", priority: "medium", note: "" });
+    setGoalForm({ title: "", targetAmount: "", savedAmount: "", deadline: "", priority: "medium", note: "", emoji: "🎯" });
   };
 
   const delGoal = (id) => updatePlans({ ...plans, goals: plans.goals.filter(g => g.id !== id) });
@@ -1138,7 +1203,7 @@ function Plans({ data, setData }) {
     const newWish = { ...wishForm, id: uid(), amount: parseFloat(wishForm.amount) };
     updatePlans({ ...plans, wishlist: [...plans.wishlist, newWish] });
     setWishModal(false);
-    setWishForm({ name: "", amount: "", priority: "medium", note: "" });
+    setWishForm({ name: "", amount: "", priority: "medium", note: "", emoji: "🛍️" });
   };
 
   const delWish = (id) => updatePlans({ ...plans, wishlist: plans.wishlist.filter(w => w.id !== id) });
@@ -1150,174 +1215,189 @@ function Plans({ data, setData }) {
     setEditGoal(null);
   };
 
-  const totalGoalTarget = plans.goals.reduce((s, g) => s + g.targetAmount, 0);
-  const totalGoalSaved = plans.goals.reduce((s, g) => s + g.savedAmount, 0);
-  const totalWishlist = plans.wishlist.reduce((s, w) => s + w.amount, 0);
-
   const daysLeft = (deadline) => {
     if (!deadline) return null;
-    const diff = new Date(deadline) - new Date();
-    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-    return days;
+    return Math.ceil((new Date(deadline) - new Date()) / (1000 * 60 * 60 * 24));
   };
 
+  const totalSaved = plans.goals.reduce((s, g) => s + g.savedAmount, 0);
+  const totalTarget = plans.goals.reduce((s, g) => s + g.targetAmount, 0);
+  const overallPct = totalTarget > 0 ? (totalSaved / totalTarget) * 100 : 0;
+  const totalWishlist = plans.wishlist.reduce((s, w) => s + w.amount, 0);
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-      {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div>
-          <h2 style={{ color: C.text, margin: 0, fontSize: 22, fontWeight: 700 }}>Future Plans</h2>
-          <div style={{ color: C.muted, fontSize: 13, marginTop: 4 }}>Track your 1-year goals and wishlist</div>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+
+      {/* ── Hero Banner ── */}
+      <div style={{ background: `linear-gradient(135deg, ${C.accent}20, ${C.purple}20)`, border: `1px solid ${C.accent}30`, borderRadius: 20, padding: "20px 20px 16px", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: -30, right: -30, fontSize: 80, opacity: 0.15, transform: "rotate(15deg)", lineHeight: 1 }}>🚀</div>
+        <div style={{ color: C.accent, fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Your Financial Dream Board</div>
+        <div style={{ color: C.text, fontSize: 20, fontWeight: 800, marginBottom: 4 }}>
+          {plans.goals.length === 0 ? "Start building your future today ✨" : `${plans.goals.filter(g => (g.savedAmount / g.targetAmount) >= 1).length} of ${plans.goals.length} goals achieved!`}
         </div>
-      </div>
-
-      {/* Summary cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 16 }}>
-        <StatCard label="Total Goal Target" value={fmt(totalGoalTarget)} icon="flag" color={C.accent} />
-        <StatCard label="Total Saved Toward Goals" value={fmt(totalGoalSaved)} icon="trend_up" color={C.green} />
-        <StatCard label="Wishlist Total" value={fmt(totalWishlist)} icon="gift" color={C.purple} />
-      </div>
-
-      {/* ── 1-Year Goals ── */}
-      <div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <Icon name="flag" size={20} color={C.accent} />
-            <h3 style={{ color: C.text, margin: 0, fontSize: 18, fontWeight: 700 }}>1-Year Goals</h3>
-            <Badge color={C.accent}>{plans.goals.length}</Badge>
+        {totalTarget > 0 && (
+          <div style={{ marginTop: 12 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: C.muted, marginBottom: 6 }}>
+              <span>Overall progress</span>
+              <span style={{ color: C.accent, fontWeight: 700 }}>{overallPct.toFixed(0)}% — {fmt(totalSaved)} of {fmt(totalTarget)}</span>
+            </div>
+            <div style={{ background: C.bg, borderRadius: 99, height: 8, overflow: "hidden" }}>
+              <div style={{ width: `${overallPct}%`, height: "100%", background: `linear-gradient(90deg, ${C.accent}, ${C.purple})`, borderRadius: 99, transition: "width 0.8s ease" }} />
+            </div>
           </div>
-          <Btn onClick={() => setGoalModal(true)}><Icon name="plus" size={16} color="#0A0E1A" /> Add Goal</Btn>
-        </div>
-
-        {plans.goals.length === 0 && (
-          <Card style={{ textAlign: "center", padding: 40 }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>🎯</div>
-            <div style={{ color: C.muted, fontSize: 15 }}>No goals yet. Add your first 1-year goal!</div>
-          </Card>
         )}
+      </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 16 }}>
+      {/* ── Tab Switcher ── */}
+      <div style={{ display: "flex", background: C.surface, borderRadius: 14, padding: 4, gap: 4 }}>
+        {[
+          { id: "goals", label: "🎯 Goals", count: plans.goals.length },
+          { id: "wishlist", label: "✨ Wishlist", count: plans.wishlist.length },
+        ].map(t => (
+          <button key={t.id} onClick={() => setActiveTab(t.id)} style={{ flex: 1, padding: "10px 8px", border: "none", borderRadius: 10, cursor: "pointer", fontFamily: "inherit", fontWeight: 700, fontSize: 14, transition: "all 0.2s", background: activeTab === t.id ? C.accent : "transparent", color: activeTab === t.id ? "#0A0E1A" : C.muted }}>
+            {t.label} {t.count > 0 && <span style={{ background: activeTab === t.id ? "#0A0E1A30" : C.border, borderRadius: 99, padding: "0px 7px", fontSize: 11 }}>{t.count}</span>}
+          </button>
+        ))}
+      </div>
+
+      {/* ── GOALS TAB ── */}
+      {activeTab === "goals" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ color: C.muted, fontSize: 13 }}>{plans.goals.length === 0 ? "No goals yet" : `${plans.goals.length} goal${plans.goals.length > 1 ? "s" : ""}`}</div>
+            <Btn onClick={() => setGoalModal(true)} size="sm"><Icon name="plus" size={14} color="#0A0E1A" /> New Goal</Btn>
+          </div>
+
+          {plans.goals.length === 0 && (
+            <div style={{ textAlign: "center", padding: "40px 20px", background: C.card, borderRadius: 16, border: `1px dashed ${C.border}` }}>
+              <div style={{ fontSize: 52, marginBottom: 12 }}>🎯</div>
+              <div style={{ color: C.text, fontWeight: 700, fontSize: 16, marginBottom: 6 }}>Set your first goal</div>
+              <div style={{ color: C.muted, fontSize: 13, marginBottom: 20, lineHeight: 1.5 }}>Emergency fund, new bike, vacation — whatever matters to you. Track it here.</div>
+              <Btn onClick={() => setGoalModal(true)}><Icon name="plus" size={15} color="#0A0E1A" /> Add Goal</Btn>
+            </div>
+          )}
+
           {plans.goals.map(g => {
             const pct = Math.min((g.savedAmount / g.targetAmount) * 100, 100);
-            const remaining = g.targetAmount - g.savedAmount;
             const days = daysLeft(g.deadline);
-            const priorityColor = PRIORITY_COLORS[g.priority];
             const isComplete = pct >= 100;
+            const priorityColor = PRIORITY_COLORS[g.priority];
+            const barColor = isComplete ? C.green : pct > 60 ? C.accent : pct > 30 ? C.yellow : C.red;
 
             return (
-              <Card key={g.id} style={{ display: "flex", flexDirection: "column", gap: 14, position: "relative", ...(isComplete ? { border: `1px solid ${C.green}50` } : {}) }}>
-                {isComplete && (
-                  <div style={{ position: "absolute", top: 14, right: 14, background: C.green + "20", color: C.green, borderRadius: 6, padding: "2px 10px", fontSize: 11, fontWeight: 700 }}>✓ ACHIEVED!</div>
-                )}
-                <div style={{ paddingRight: isComplete ? 90 : 0 }}>
-                  <div style={{ color: C.text, fontWeight: 700, fontSize: 16, marginBottom: 6 }}>{g.title}</div>
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    <Badge color={priorityColor}>{g.priority} priority</Badge>
-                    {g.deadline && (
-                      <span style={{ color: days !== null && days < 30 ? C.red : days !== null && days < 90 ? C.yellow : C.muted, fontSize: 12, display: "flex", alignItems: "center" }}>
-                        📅 {g.deadline} {days !== null && `(${days > 0 ? `${days}d left` : "overdue"})`}
-                      </span>
-                    )}
+              <Card key={g.id} glow={isComplete ? C.green : undefined} style={{ padding: 18, display: "flex", flexDirection: "column", gap: 14 }}>
+                {/* Top row */}
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                  <div style={{ fontSize: 36, lineHeight: 1, flexShrink: 0 }}>{g.emoji || "🎯"}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+                      <div style={{ color: C.text, fontWeight: 700, fontSize: 16, lineHeight: 1.3 }}>{g.title}</div>
+                      {isComplete && <span style={{ background: C.green + "20", color: C.green, borderRadius: 20, padding: "2px 10px", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>✓ Done!</span>}
+                    </div>
+                    <div style={{ display: "flex", gap: 6, marginTop: 5, flexWrap: "wrap" }}>
+                      <span style={{ background: priorityColor + "15", color: priorityColor, borderRadius: 20, padding: "2px 10px", fontSize: 11, fontWeight: 600 }}>{g.priority}</span>
+                      {days !== null && (
+                        <span style={{ background: (days < 30 ? C.red : days < 90 ? C.yellow : C.muted) + "15", color: days < 30 ? C.red : days < 90 ? C.yellow : C.muted, borderRadius: 20, padding: "2px 10px", fontSize: 11, fontWeight: 600 }}>
+                          {days > 0 ? `${days}d left` : "Overdue"}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
-                  <span style={{ color: C.muted }}>Saved: <span style={{ color: C.green, fontWeight: 700 }}>{fmt(g.savedAmount)}</span></span>
-                  <span style={{ color: C.muted }}>Target: <span style={{ color: C.text }}>{fmt(g.targetAmount)}</span></span>
+                {/* Amount row */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                  <div>
+                    <div style={{ color: barColor, fontFamily: "monospace", fontWeight: 800, fontSize: 20 }}>{fmt(g.savedAmount)}</div>
+                    <div style={{ color: C.muted, fontSize: 12 }}>saved of {fmt(g.targetAmount)}</div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ color: C.text, fontWeight: 700, fontSize: 18 }}>{pct.toFixed(0)}%</div>
+                    <div style={{ color: C.muted, fontSize: 12 }}>{fmt(Math.max(g.targetAmount - g.savedAmount, 0))} left</div>
+                  </div>
                 </div>
 
-                <div style={{ background: C.bg, borderRadius: 8, height: 10, overflow: "hidden" }}>
-                  <div style={{ width: `${pct}%`, height: "100%", background: isComplete ? C.green : pct > 60 ? C.accent : pct > 30 ? C.yellow : C.red, borderRadius: 8, transition: "width 0.6s ease" }} />
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: C.muted }}>
-                  <span>{pct.toFixed(1)}% complete</span>
-                  <span>Still need: {fmt(Math.max(remaining, 0))}</span>
+                {/* Progress bar */}
+                <div style={{ background: C.bg, borderRadius: 99, height: 10, overflow: "hidden" }}>
+                  <div style={{ width: `${pct}%`, height: "100%", background: `linear-gradient(90deg, ${barColor}, ${barColor}99)`, borderRadius: 99, transition: "width 0.8s ease" }} />
                 </div>
 
-                {g.note && <div style={{ color: C.muted, fontSize: 12, fontStyle: "italic" }}>📝 {g.note}</div>}
+                {g.note && <div style={{ color: C.muted, fontSize: 12, fontStyle: "italic" }}>"{g.note}"</div>}
 
+                {/* Actions */}
                 <div style={{ display: "flex", gap: 8 }}>
-                  <Btn variant="ghost" size="sm" style={{ flex: 1 }} onClick={() => { setEditGoal(g); setProgressForm({ savedAmount: String(g.savedAmount) }); }}>
-                    <Icon name="edit" size={13} color={C.muted} /> Update Progress
-                  </Btn>
-                  <Btn variant="danger" size="sm" onClick={() => delGoal(g.id)}><Icon name="trash" size={13} color={C.red} /></Btn>
+                  <button onClick={() => { setEditGoal(g); setProgressForm({ savedAmount: String(g.savedAmount) }); }}
+                    style={{ flex: 1, padding: "10px", background: C.accent + "15", border: `1px solid ${C.accent}30`, borderRadius: 10, color: C.accent, fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
+                    💰 Update Progress
+                  </button>
+                  <button onClick={() => delGoal(g.id)} style={{ padding: "10px 14px", background: C.red + "10", border: `1px solid ${C.red}20`, borderRadius: 10, color: C.red, cursor: "pointer" }}>
+                    <Icon name="trash" size={15} color={C.red} />
+                  </button>
                 </div>
               </Card>
             );
           })}
         </div>
-      </div>
+      )}
 
-      {/* ── Wishlist ── */}
-      <div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <Icon name="gift" size={20} color={C.purple} />
-            <h3 style={{ color: C.text, margin: 0, fontSize: 18, fontWeight: 700 }}>Things to Buy</h3>
-            <Badge color={C.purple}>{plans.wishlist.length}</Badge>
-          </div>
-          <Btn variant="purple" onClick={() => setWishModal(true)}><Icon name="plus" size={16} color={C.purple} /> Add Item</Btn>
-        </div>
-
-        {plans.wishlist.length === 0 && (
-          <Card style={{ textAlign: "center", padding: 40 }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>🛒</div>
-            <div style={{ color: C.muted, fontSize: 15 }}>Your wishlist is empty. Add things you want to buy!</div>
-          </Card>
-        )}
-
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 16 }}>
-          {plans.wishlist.sort((a, b) => {
-            const order = { high: 0, medium: 1, low: 2 };
-            return order[a.priority] - order[b.priority];
-          }).map(w => {
-            const priorityColor = PRIORITY_COLORS[w.priority];
-            return (
-              <Card key={w.id} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <div style={{ color: C.text, fontWeight: 700, fontSize: 15 }}>{w.name}</div>
-                  <Btn variant="danger" size="sm" onClick={() => delWish(w.id)}><Icon name="trash" size={13} color={C.red} /></Btn>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <Badge color={priorityColor}>{w.priority} priority</Badge>
-                  <span style={{ color: C.purple, fontFamily: "monospace", fontWeight: 700, fontSize: 16 }}>{fmt(w.amount)}</span>
-                </div>
-                {w.note && <div style={{ color: C.muted, fontSize: 12, fontStyle: "italic" }}>📝 {w.note}</div>}
-              </Card>
-            );
-          })}
-        </div>
-
-        {/* Wishlist total bar */}
-        {plans.wishlist.length > 0 && (
-          <Card style={{ marginTop: 16 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <div style={{ color: C.text, fontWeight: 700, fontSize: 15 }}>Wishlist by Priority</div>
-              <span style={{ color: C.purple, fontFamily: "monospace", fontWeight: 700 }}>Total: {fmt(totalWishlist)}</span>
+      {/* ── WISHLIST TAB ── */}
+      {activeTab === "wishlist" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ color: C.muted, fontSize: 13 }}>
+              {plans.wishlist.length === 0 ? "Nothing yet" : `Total: ${fmt(totalWishlist)}`}
             </div>
-            <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={["high","medium","low"].map(p => ({
-                name: p.charAt(0).toUpperCase() + p.slice(1),
-                amount: plans.wishlist.filter(w => w.priority === p).reduce((s, w) => s + w.amount, 0),
-                color: PRIORITY_COLORS[p],
-              })).filter(d => d.amount > 0)}>
-                <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
-                <XAxis dataKey="name" stroke={C.muted} tick={{ fontSize: 12 }} />
-                <YAxis stroke={C.muted} tick={{ fontSize: 12 }} tickFormatter={v => `₹${v / 1000}k`} />
-                <Tooltip contentStyle={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10 }} formatter={v => fmt(v)} />
-                <Bar dataKey="amount" radius={[6, 6, 0, 0]}>
-                  {["high","medium","low"].filter(p => plans.wishlist.some(w => w.priority === p))
-                    .map((p, i) => <Cell key={i} fill={PRIORITY_COLORS[p]} />)}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </Card>
-        )}
-      </div>
+            <Btn variant="purple" size="sm" onClick={() => setWishModal(true)}><Icon name="plus" size={14} color={C.purple} /> Add Item</Btn>
+          </div>
+
+          {plans.wishlist.length === 0 && (
+            <div style={{ textAlign: "center", padding: "40px 20px", background: C.card, borderRadius: 16, border: `1px dashed ${C.border}` }}>
+              <div style={{ fontSize: 52, marginBottom: 12 }}>✨</div>
+              <div style={{ color: C.text, fontWeight: 700, fontSize: 16, marginBottom: 6 }}>Your wishlist is empty</div>
+              <div style={{ color: C.muted, fontSize: 13, marginBottom: 20, lineHeight: 1.5 }}>Things you want to buy someday — phone, laptop, trip. Put it here so you can plan for it.</div>
+              <Btn variant="purple" onClick={() => setWishModal(true)}><Icon name="plus" size={15} color={C.purple} /> Add Item</Btn>
+            </div>
+          )}
+
+          {[...plans.wishlist].sort((a, b) => ({ high: 0, medium: 1, low: 2 }[a.priority] - { high: 0, medium: 1, low: 2 }[b.priority])).map(w => {
+            const pc = PRIORITY_COLORS[w.priority];
+            return (
+              <Card key={w.id} style={{ padding: 16, display: "flex", alignItems: "center", gap: 14 }}>
+                <div style={{ fontSize: 32, flexShrink: 0 }}>{w.emoji || "🛍️"}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ color: C.text, fontWeight: 700, fontSize: 15 }}>{w.name}</div>
+                  <div style={{ display: "flex", gap: 6, marginTop: 4, alignItems: "center", flexWrap: "wrap" }}>
+                    <span style={{ background: pc + "15", color: pc, borderRadius: 20, padding: "2px 10px", fontSize: 11, fontWeight: 600 }}>{w.priority}</span>
+                    {w.note && <span style={{ color: C.muted, fontSize: 12 }}>{w.note}</span>}
+                  </div>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8, flexShrink: 0 }}>
+                  <div style={{ color: C.purple, fontFamily: "monospace", fontWeight: 800, fontSize: 16 }}>{fmt(w.amount)}</div>
+                  <button onClick={() => delWish(w.id)} style={{ background: "none", border: "none", cursor: "pointer", color: C.muted, padding: 0 }}>
+                    <Icon name="trash" size={14} color={C.muted} />
+                  </button>
+                </div>
+              </Card>
+            );
+          })}
+
+          {plans.wishlist.length > 0 && (
+            <div style={{ background: C.surface, borderRadius: 14, padding: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ color: C.muted, fontSize: 13 }}>Total to save for wishlist</span>
+              <span style={{ color: C.purple, fontFamily: "monospace", fontWeight: 800, fontSize: 18 }}>{fmt(totalWishlist)}</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Add Goal Modal */}
-      <Modal open={goalModal} onClose={() => setGoalModal(false)} title="Add 1-Year Goal">
-        <Input label="Goal Title" placeholder="e.g. Build Emergency Fund" value={goalForm.title} onChange={e => setGoalForm(f => ({ ...f, title: e.target.value }))} />
+      <Modal open={goalModal} onClose={() => setGoalModal(false)} title="New Goal 🎯">
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
+          {GOAL_EMOJIS.map(e => (
+            <button key={e} onClick={() => setGoalForm(f => ({ ...f, emoji: e }))} style={{ fontSize: 22, padding: "6px 8px", borderRadius: 10, border: `2px solid ${goalForm.emoji === e ? C.accent : "transparent"}`, background: goalForm.emoji === e ? C.accent + "20" : C.bg, cursor: "pointer" }}>{e}</button>
+          ))}
+        </div>
+        <Input label="Goal Title" placeholder="e.g. Buy a Bike, Emergency Fund" value={goalForm.title} onChange={e => setGoalForm(f => ({ ...f, title: e.target.value }))} />
         <Input label="Target Amount (₹)" type="number" placeholder="100000" value={goalForm.targetAmount} onChange={e => setGoalForm(f => ({ ...f, targetAmount: e.target.value }))} />
         <Input label="Already Saved (₹)" type="number" placeholder="0" value={goalForm.savedAmount} onChange={e => setGoalForm(f => ({ ...f, savedAmount: e.target.value }))} />
         <Input label="Deadline" type="date" value={goalForm.deadline} onChange={e => setGoalForm(f => ({ ...f, deadline: e.target.value }))} />
@@ -1326,44 +1406,58 @@ function Plans({ data, setData }) {
           <option value="medium">🟡 Medium</option>
           <option value="low">🟢 Low</option>
         </Select>
-        <Input label="Note (optional)" placeholder="Why is this goal important?" value={goalForm.note} onChange={e => setGoalForm(f => ({ ...f, note: e.target.value }))} />
-        <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 8 }}>
-          <Btn variant="ghost" onClick={() => setGoalModal(false)}>Cancel</Btn>
-          <Btn onClick={addGoal}>Add Goal</Btn>
+        <Input label="Note (optional)" placeholder="Why is this important to you?" value={goalForm.note} onChange={e => setGoalForm(f => ({ ...f, note: e.target.value }))} />
+        <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+          <Btn variant="ghost" onClick={() => setGoalModal(false)} style={{ flex: 1 }}>Cancel</Btn>
+          <Btn onClick={addGoal} style={{ flex: 2 }}>Add Goal</Btn>
         </div>
       </Modal>
 
       {/* Add Wishlist Modal */}
-      <Modal open={wishModal} onClose={() => setWishModal(false)} title="Add to Wishlist">
-        <Input label="Item Name" placeholder="e.g. MacBook Pro" value={wishForm.name} onChange={e => setWishForm(f => ({ ...f, name: e.target.value }))} />
-        <Input label="Estimated Amount (₹)" type="number" placeholder="0" value={wishForm.amount} onChange={e => setWishForm(f => ({ ...f, amount: e.target.value }))} />
+      <Modal open={wishModal} onClose={() => setWishModal(false)} title="Add to Wishlist ✨">
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
+          {WISH_EMOJIS.map(e => (
+            <button key={e} onClick={() => setWishForm(f => ({ ...f, emoji: e }))} style={{ fontSize: 22, padding: "6px 8px", borderRadius: 10, border: `2px solid ${wishForm.emoji === e ? C.purple : "transparent"}`, background: wishForm.emoji === e ? C.purple + "20" : C.bg, cursor: "pointer" }}>{e}</button>
+          ))}
+        </div>
+        <Input label="Item Name" placeholder="e.g. iPhone 16, MacBook" value={wishForm.name} onChange={e => setWishForm(f => ({ ...f, name: e.target.value }))} />
+        <Input label="Estimated Cost (₹)" type="number" placeholder="0" value={wishForm.amount} onChange={e => setWishForm(f => ({ ...f, amount: e.target.value }))} />
         <Select label="Priority" value={wishForm.priority} onChange={e => setWishForm(f => ({ ...f, priority: e.target.value }))}>
-          <option value="high">🔴 High — Need it soon</option>
-          <option value="medium">🟡 Medium — Would be nice</option>
-          <option value="low">🟢 Low — Someday maybe</option>
+          <option value="high">🔴 Need it soon</option>
+          <option value="medium">🟡 Would be nice</option>
+          <option value="low">🟢 Someday maybe</option>
         </Select>
         <Input label="Note (optional)" placeholder="Why do you want this?" value={wishForm.note} onChange={e => setWishForm(f => ({ ...f, note: e.target.value }))} />
-        <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 8 }}>
-          <Btn variant="ghost" onClick={() => setWishModal(false)}>Cancel</Btn>
-          <Btn onClick={addWish}>Add to Wishlist</Btn>
+        <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+          <Btn variant="ghost" onClick={() => setWishModal(false)} style={{ flex: 1 }}>Cancel</Btn>
+          <Btn onClick={addWish} style={{ flex: 2 }}>Add Item</Btn>
         </div>
       </Modal>
 
       {/* Update Progress Modal */}
-      <Modal open={!!editGoal} onClose={() => setEditGoal(null)} title={`Update: ${editGoal?.title}`}>
+      <Modal open={!!editGoal} onClose={() => setEditGoal(null)} title={editGoal ? `Update: ${editGoal.title}` : ""}>
         {editGoal && (
           <>
-            <div style={{ background: C.bg, borderRadius: 10, padding: "12px 16px", marginBottom: 16 }}>
-              <div style={{ color: C.muted, fontSize: 13, marginBottom: 4 }}>Target Amount</div>
-              <div style={{ color: C.text, fontWeight: 700, fontSize: 18, fontFamily: "monospace" }}>{fmt(editGoal.targetAmount)}</div>
+            <div style={{ textAlign: "center", fontSize: 48, marginBottom: 8 }}>{editGoal.emoji || "🎯"}</div>
+            <div style={{ background: C.bg, borderRadius: 12, padding: 16, marginBottom: 16, textAlign: "center" }}>
+              <div style={{ color: C.muted, fontSize: 12, marginBottom: 4 }}>Target</div>
+              <div style={{ color: C.text, fontWeight: 800, fontSize: 22, fontFamily: "monospace" }}>{fmt(editGoal.targetAmount)}</div>
             </div>
             <Input label="Amount Saved So Far (₹)" type="number" value={progressForm.savedAmount} onChange={e => setProgressForm({ savedAmount: e.target.value })} />
-            <div style={{ color: C.muted, fontSize: 13, marginBottom: 16 }}>
-              Progress: {progressForm.savedAmount ? ((parseFloat(progressForm.savedAmount) / editGoal.targetAmount) * 100).toFixed(1) : 0}%
-            </div>
-            <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
-              <Btn variant="ghost" onClick={() => setEditGoal(null)}>Cancel</Btn>
-              <Btn onClick={saveProgress}>Save Progress</Btn>
+            {progressForm.savedAmount && (
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: C.muted, marginBottom: 6 }}>
+                  <span>Progress</span>
+                  <span style={{ color: C.accent, fontWeight: 700 }}>{((parseFloat(progressForm.savedAmount) / editGoal.targetAmount) * 100).toFixed(1)}%</span>
+                </div>
+                <div style={{ background: C.bg, borderRadius: 99, height: 8, overflow: "hidden" }}>
+                  <div style={{ width: `${Math.min((parseFloat(progressForm.savedAmount) / editGoal.targetAmount) * 100, 100)}%`, height: "100%", background: C.accent, borderRadius: 99 }} />
+                </div>
+              </div>
+            )}
+            <div style={{ display: "flex", gap: 10 }}>
+              <Btn variant="ghost" onClick={() => setEditGoal(null)} style={{ flex: 1 }}>Cancel</Btn>
+              <Btn onClick={saveProgress} style={{ flex: 2 }}>Save Progress</Btn>
             </div>
           </>
         )}
@@ -1529,6 +1623,7 @@ export default function App() {
           );
           if (loaded.masterAdjustment === undefined) loaded.masterAdjustment = 0;
           if (!loaded.autopaymentLog) loaded.autopaymentLog = [];
+          if (!loaded.customCategories) loaded.customCategories = { expense: [], income: [], asset: [], liability: [] };
           setData(loaded);
         } else {
           const fresh = initState();
@@ -1586,9 +1681,14 @@ export default function App() {
         ::-webkit-scrollbar-thumb { background: #1E2D42; border-radius: 4px; }
       `}</style>
 
+      {/* Background orbs */}
+      <Orb color={C.accent} size={500} top={-100} left={-100} opacity={0.07} />
+      <Orb color={C.purple} size={400} bottom={-100} right={-100} opacity={0.07} />
+      <Orb color={C.green} size={300} top="40%" left="40%" opacity={0.04} />
+
       {/* ── DESKTOP SIDEBAR ── */}
       {!isMobile && (
-        <div style={{ width: 240, background: C.surface, borderRight: `1px solid ${C.border}`, display: "flex", flexDirection: "column", padding: "24px 16px", position: "fixed", top: 0, bottom: 0, left: 0, zIndex: 10 }}>
+        <div style={{ width: 240, background: C.surface, position: "relative", zIndex: 2,, borderRight: `1px solid ${C.border}`, display: "flex", flexDirection: "column", padding: "24px 16px", position: "fixed", top: 0, bottom: 0, left: 0, zIndex: 10 }}>
           <div style={{ marginBottom: 32 }}>
             <div style={{ fontSize: 22, fontWeight: 800, color: C.text, letterSpacing: -0.5 }}>💰 FinanceOS</div>
             <div style={{ color: C.muted, fontSize: 12, marginTop: 2 }}>Personal Finance Tracker</div>
@@ -1674,7 +1774,7 @@ export default function App() {
       )}
 
       {/* ── MAIN CONTENT ── */}
-      <main style={{
+      <main style={{ position: "relative", zIndex: 1,
         marginLeft: isMobile ? 0 : 240,
         flex: 1,
         padding: isMobile ? "72px 14px 90px" : 32,
