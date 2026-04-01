@@ -1588,6 +1588,8 @@ export default function App() {
     return () => window.removeEventListener("resize", handler);
   }, []);
 
+  const [loadError, setLoadError] = useState(null);
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
@@ -1608,6 +1610,7 @@ export default function App() {
   useEffect(() => {
     if (!user?.uid) return;
     setDataLoading(true);
+    setLoadError(null);
     const load = async () => {
       try {
         const ref = doc(db, "users", user.uid);
@@ -1617,7 +1620,6 @@ export default function App() {
           // Migrate: ensure new keys exist for existing users
           if (!loaded.plans) loaded.plans = { goals: [], wishlist: [] };
           if (!loaded.autopayments) loaded.autopayments = [];
-          // Migrate: give existing autopayments a createdAt of today so they don't backfill
           loaded.autopayments = loaded.autopayments.map(ap =>
             ap.createdAt ? ap : { ...ap, createdAt: toYMD(new Date()) }
           );
@@ -1626,13 +1628,15 @@ export default function App() {
           if (!loaded.customCategories) loaded.customCategories = { expense: [], income: [], asset: [], liability: [] };
           setData(loaded);
         } else {
+          // Brand new user — no existing data, safe to init
           const fresh = initState();
           await setDoc(ref, fresh);
           setData(fresh);
         }
       } catch (e) {
         console.error("Failed to load data:", e);
-        setData(initState());
+        // NEVER overwrite with dummy data — show error and let user retry
+        setLoadError(e.message || "Network error");
       } finally {
         setDataLoading(false);
       }
@@ -1657,12 +1661,43 @@ export default function App() {
 
   if (!user) return <LoginPage onLogin={setUser} />;
 
-  if (dataLoading || !data) {
+  if (dataLoading) {
     return (
       <div style={{ minHeight: "100vh", background: C.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
         <div style={{ fontSize: 40 }}>💰</div>
         <div style={{ color: C.accent, fontSize: 18, fontWeight: 700 }}>Loading your finances...</div>
         <div style={{ color: C.muted, fontSize: 13 }}>Fetching your data securely</div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div style={{ minHeight: "100vh", background: C.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 20, padding: 24 }}>
+        <div style={{ fontSize: 48 }}>⚠️</div>
+        <div style={{ color: C.red, fontSize: 20, fontWeight: 700, textAlign: "center" }}>Could not load your data</div>
+        <div style={{ color: C.muted, fontSize: 14, textAlign: "center", maxWidth: 340, lineHeight: 1.6 }}>
+          Your data is safe in Firebase. This is likely a network issue. Please check your connection and try again.
+        </div>
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: "10px 16px", color: C.muted, fontSize: 12, fontFamily: "monospace", maxWidth: 340, wordBreak: "break-all" }}>
+          {loadError}
+        </div>
+        <button onClick={() => { setLoadError(null); setDataLoading(true); window.location.reload(); }}
+          style={{ background: C.accent, color: "#0A0E1A", border: "none", borderRadius: 12, padding: "14px 32px", fontSize: 16, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+          🔄 Retry
+        </button>
+        <button onClick={handleSignOut} style={{ background: "transparent", color: C.muted, border: `1px solid ${C.border}`, borderRadius: 10, padding: "10px 20px", fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
+          Sign Out
+        </button>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div style={{ minHeight: "100vh", background: C.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
+        <div style={{ fontSize: 40 }}>💰</div>
+        <div style={{ color: C.accent, fontSize: 18, fontWeight: 700 }}>Loading your finances...</div>
       </div>
     );
   }
