@@ -12,21 +12,21 @@ import {
 
 // ─── PALETTE ──────────────────────────────────────────────────────────────────
 const C = {
-  bg: "#0A0E1A",
-  surface: "#111827",
-  card: "#151E2E",
-  border: "#1E2D42",
-  accent: "#3ECFCF",
-  accentDim: "#1A4A4A",
-  green: "#22D3A0",
+  bg: "#0A0A0A",
+  surface: "#141414",
+  card: "#1A1A1A",
+  border: "#2A2A2A",
+  accent: "#FFFFFF",
+  accentDim: "#2A2A2A",
+  green: "#4ADE80",
   red: "#F87171",
   yellow: "#FBBF24",
-  purple: "#A78BFA",
+  purple: "#C084FC",
   blue: "#60A5FA",
   orange: "#FB923C",
-  text: "#E2E8F0",
-  muted: "#64748B",
-  chart: ["#3ECFCF","#22D3A0","#A78BFA","#FBBF24","#F87171","#60A5FA","#FB923C"],
+  text: "#F5F5F5",
+  muted: "#6B6B6B",
+  chart: ["#FFFFFF","#E0E0E0","#BDBDBD","#9E9E9E","#757575","#616161","#424242"],
 };
 
 // ─── UTILITY ──────────────────────────────────────────────────────────────────
@@ -118,8 +118,8 @@ const Icon = ({ name, size = 18, color = "currentColor" }) => {
 };
 
 // ─── COMPONENTS ───────────────────────────────────────────────────────────────
-const Card = ({ children, style = {}, glow }) => (
-  <div style={{ background: C.card, border: `1px solid ${glow ? glow + "40" : C.border}`, borderRadius: 16, padding: 24, boxShadow: glow ? `0 0 28px ${glow}20` : "none", transition: "box-shadow 0.3s", ...style }}>
+const Card = ({ children, style = {} }) => (
+  <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: 20, ...style }}>
     {children}
   </div>
 );
@@ -130,30 +130,18 @@ const Badge = ({ children, color = C.accent }) => (
   </span>
 );
 
-const StatCard = ({ label, value, icon, color, change }) => (
-  <Card glow={color} style={{ display: "flex", flexDirection: "column", gap: 12, position: "relative", overflow: "hidden" }}>
-    <div style={{ position: "absolute", top: -20, right: -20, width: 80, height: 80, borderRadius: "50%", background: color + "15", filter: "blur(20px)" }} />
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-      <div style={{ background: `linear-gradient(135deg, ${color}30, ${color}15)`, borderRadius: 12, padding: 10, display: "flex", border: `1px solid ${color}30` }}>
-        <Icon name={icon} color={color} size={20} />
-      </div>
-      {change !== undefined && (
-        <div style={{ display: "flex", alignItems: "center", gap: 4, color: change >= 0 ? C.green : C.red, fontSize: 12, background: (change >= 0 ? C.green : C.red) + "15", padding: "3px 8px", borderRadius: 20 }}>
-          <Icon name={change >= 0 ? "trend_up" : "trend_down"} size={12} color={change >= 0 ? C.green : C.red} />
-          {Math.abs(change)}%
-        </div>
-      )}
+const StatCard = ({ label, value, icon, color, sub }) => (
+  <Card style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div style={{ color: C.muted, fontSize: 11, textTransform: "uppercase", letterSpacing: 1 }}>{label}</div>
+      <Icon name={icon} color={C.muted} size={15} />
     </div>
-    <div>
-      <div style={{ color: C.muted, fontSize: 12, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
-      <div style={{ color, fontSize: 22, fontWeight: 800, fontFamily: "'DM Mono', monospace", letterSpacing: -0.5 }}>{value}</div>
+    <div style={{ color: C.text, fontSize: 24, fontWeight: 700, fontFamily: "'DM Mono', monospace" }}>{value}</div>
+    {sub && <div style={{ color: C.muted, fontSize: 12 }}>{sub}</div>}
+    <div style={{ height: 2, background: C.border, borderRadius: 2 }}>
+      <div style={{ height: 2, width: "30%", background: color || C.accent, borderRadius: 2 }} />
     </div>
   </Card>
-);
-
-// Gradient orbs for visual flair
-const Orb = ({ color, size = 300, top, left, right, bottom, opacity = 0.12 }) => (
-  <div style={{ position: "fixed", width: size, height: size, borderRadius: "50%", background: `radial-gradient(circle, ${color}, transparent 70%)`, opacity, pointerEvents: "none", zIndex: 0, top, left, right, bottom, filter: "blur(40px)" }} />
 );
 
 const Modal = ({ open, onClose, title, children }) => {
@@ -176,7 +164,7 @@ const Input = ({ label, ...props }) => (
   <div style={{ marginBottom: 16 }}>
     {label && <label style={{ color: C.muted, fontSize: 13, display: "block", marginBottom: 6 }}>{label}</label>}
     <input {...props} style={{ width: "100%", background: C.bg, border: `1px solid ${C.border}`, borderRadius: 10, padding: "10px 14px", color: C.text, fontSize: 15, outline: "none", boxSizing: "border-box", ...props.style }}
-      onFocus={e => e.target.style.borderColor = C.accent}
+      onFocus={e => e.target.style.borderColor = C.text}
       onBlur={e => e.target.style.borderColor = C.border} />
   </div>
 );
@@ -193,7 +181,7 @@ const Select = ({ label, children, ...props }) => (
 const Btn = ({ children, onClick, variant = "primary", size = "md", style = {} }) => {
   const base = { border: "none", borderRadius: 10, cursor: "pointer", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "inherit", transition: "all 0.15s" };
   const variants = {
-    primary: { background: C.accent, color: "#0A0E1A" },
+    primary: { background: C.text, color: "#0A0A0A" },
     ghost: { background: "transparent", color: C.muted, border: `1px solid ${C.border}` },
     danger: { background: C.red + "20", color: C.red, border: `1px solid ${C.red}40` },
     purple: { background: C.purple + "20", color: C.purple, border: `1px solid ${C.purple}40` },
@@ -337,14 +325,38 @@ function Dashboard({ data, setData }) {
     setEditBalanceModal(false);
   };
 
+  // ── MONTHLY calculations (current month only for the overview) ──
+  const thisMonth = today.getMonth();
+  const thisYear = today.getFullYear();
+  const inThisMonth = (t) => { const d = new Date(t.date); return d.getMonth() === thisMonth && d.getFullYear() === thisYear; };
+  const lastMonthStart = new Date(thisYear, thisMonth - 1, 1);
+  const inLastMonth = (t) => { const d = new Date(t.date); return d.getMonth() === lastMonthStart.getMonth() && d.getFullYear() === lastMonthStart.getFullYear(); };
+
+  const monthTx = data.transactions.filter(inThisMonth);
+  const lastMonthTx = data.transactions.filter(inLastMonth);
+
+  const monthIncome = monthTx.filter(t => t.type === "income").reduce((s, t) => s + t.amount, 0);
+  const monthExpense = monthTx.filter(t => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+  const monthInvestment = monthTx.filter(t => t.type === "investment").reduce((s, t) => s + t.amount, 0);
+  const monthLiabPayments = monthTx.filter(t => t.type === "liability_payment").reduce((s, t) => s + t.amount, 0);
+  const monthSavings = monthIncome - monthExpense - monthInvestment - monthLiabPayments;
+  const savingsRate = monthIncome > 0 ? ((monthSavings / monthIncome) * 100).toFixed(1) : 0;
+
+  const lastIncome = lastMonthTx.filter(t => t.type === "income").reduce((s, t) => s + t.amount, 0);
+  const lastExpense = lastMonthTx.filter(t => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+
+  const pctChange = (curr, prev) => prev === 0 ? null : (((curr - prev) / prev) * 100).toFixed(0);
+  const incomeChange = pctChange(monthIncome, lastIncome);
+  const expenseChange = pctChange(monthExpense, lastExpense);
+
+  // All-time for master balance
   const totalIncome = data.transactions.filter(t => t.type === "income").reduce((s, t) => s + t.amount, 0);
   const totalExpense = data.transactions.filter(t => t.type === "expense").reduce((s, t) => s + t.amount, 0);
   const totalInvestment = data.transactions.filter(t => t.type === "investment").reduce((s, t) => s + t.amount, 0);
   const totalLiabPayments = data.transactions.filter(t => t.type === "liability_payment").reduce((s, t) => s + t.amount, 0);
-  // Master balance = adjustment (opening/manual) + income - all outflows
   const masterBalance = masterAdjustment + totalIncome - totalExpense - totalInvestment - totalLiabPayments;
-  const savings = totalIncome - totalExpense - totalInvestment - totalLiabPayments;
-  // Match Net Worth tab: assets include investments, liabilities reduced by payments
+
+  // Net worth
   const getInvestedInAsset = (assetName) =>
     data.transactions.filter(t => t.type === "investment" && t.category === assetName).reduce((s, t) => s + t.amount, 0);
   const getLiabPayments = (liabName) =>
@@ -353,12 +365,12 @@ function Dashboard({ data, setData }) {
   const totalLiabilities = data.liabilities.reduce((s, l) => s + Math.max(l.value - getLiabPayments(l.name), 0), 0);
   const netWorth = totalAssets - totalLiabilities;
 
-  const expByCategory = EXPENSE_CATS.map(cat => ({
-    name: cat,
-    value: data.transactions.filter(t => t.type === "expense" && t.category === cat).reduce((s, t) => s + t.amount, 0)
-  })).filter(d => d.value > 0);
+  const monthLabel = today.toLocaleString("default", { month: "long", year: "numeric" });
 
-  const savingsRate = totalIncome > 0 ? ((savings / totalIncome) * 100).toFixed(1) : 0;
+  const expByCategory = [...new Set(monthTx.filter(t => t.type === "expense").map(t => t.category))].map(cat => ({
+    name: cat,
+    value: monthTx.filter(t => t.type === "expense" && t.category === cat).reduce((s, t) => s + t.amount, 0)
+  })).filter(d => d.value > 0).sort((a, b) => b.value - a.value);
 
   // Build chart data from REAL transactions grouped by month
   const buildChartData = () => {
@@ -391,14 +403,14 @@ function Dashboard({ data, setData }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
 
       {/* ── Master Account ── */}
-      <div style={{ background: `linear-gradient(135deg, ${C.accent}22 0%, ${C.purple}22 100%)`, border: `1px solid ${C.accent}40`, borderRadius: 20, padding: 24 }}>
+      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 20, padding: 20 }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 20 }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
               <span style={{ fontSize: 22 }}>💳</span>
               <span style={{ color: C.muted, fontSize: 14, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1 }}>Master Account Balance</span>
             </div>
-            <div style={{ color: masterBalance >= 0 ? C.accent : C.red, fontSize: 42, fontWeight: 800, fontFamily: "'DM Mono', monospace", letterSpacing: -1 }}>
+            <div style={{ color: masterBalance >= 0 ? C.text : C.red, fontSize: 38, fontWeight: 800, fontFamily: "'DM Mono', monospace", letterSpacing: -1 }}>
               {fmt(masterBalance)}
             </div>
             <div style={{ color: C.muted, fontSize: 13, marginTop: 6 }}>
@@ -409,7 +421,7 @@ function Dashboard({ data, setData }) {
                 <Icon name="edit" size={13} color={C.muted} /> Edit Balance
               </Btn>
               <Btn size="sm" onClick={() => setApModal(true)}>
-                <Icon name="plus" size={13} color="#0A0E1A" /> Add Auto Payment
+                <Icon name="plus" size={13} color="#0A0A0A" /> Add Auto Payment
               </Btn>
             </div>
           </div>
@@ -437,14 +449,14 @@ function Dashboard({ data, setData }) {
             ))}
             <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 8, display: "flex", justifyContent: "space-between" }}>
               <span style={{ color: C.text, fontSize: 13, fontWeight: 600 }}>Balance</span>
-              <span style={{ color: masterBalance >= 0 ? C.accent : C.red, fontFamily: "monospace", fontWeight: 800, fontSize: 15 }}>{fmt(masterBalance)}</span>
+              <span style={{ color: masterBalance >= 0 ? C.text : C.red, fontFamily: "monospace", fontWeight: 800, fontSize: 15 }}>{fmt(masterBalance)}</span>
             </div>
           </div>
         </div>
 
         {/* Auto Payments list */}
         {autopayments.length > 0 && (
-          <div style={{ marginTop: 20, borderTop: `1px solid ${C.accent}20`, paddingTop: 16 }}>
+          <div style={{ marginTop: 16, borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
             <div style={{ color: C.muted, fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>
               🔄 Auto Payments ({autopayments.length})
             </div>
@@ -577,152 +589,134 @@ function Dashboard({ data, setData }) {
         </div>
       </Modal>
 
-      {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 16 }}>
-        <StatCard label="Monthly Income" value={fmt(totalIncome)} icon="trend_up" color={C.green} change={5.2} />
-        <StatCard label="Monthly Expenses" value={fmt(totalExpense)} icon="trend_down" color={C.red} change={-3.1} />
-        <StatCard label="Investments" value={fmt(totalInvestment)} icon="invest" color={C.purple} change={8.5} />
-        <StatCard label="Net Savings" value={fmt(savings)} icon="wallet" color={C.accent} />
-        <StatCard label="Net Worth" value={fmt(netWorth)} icon="assets" color={C.blue} change={2.4} />
+      {/* ── MONTHLY STATS ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12 }}>
+        <StatCard label="Income" value={fmt(monthIncome)} icon="trend_up" color={C.green}
+          sub={incomeChange !== null ? `${incomeChange > 0 ? "+" : ""}${incomeChange}% vs last month` : "This month"} />
+        <StatCard label="Expenses" value={fmt(monthExpense)} icon="trend_down" color={C.red}
+          sub={expenseChange !== null ? `${expenseChange > 0 ? "+" : ""}${expenseChange}% vs last month` : "This month"} />
+        <StatCard label="Invested" value={fmt(monthInvestment)} icon="invest" color={C.purple} sub="This month" />
+        <StatCard label="Saved" value={fmt(monthSavings)} icon="wallet" color={monthSavings >= 0 ? C.green : C.red} sub={`${savingsRate}% savings rate`} />
       </div>
 
-      {/* Charts Row */}
+      {/* ── MONTH HEADER ── */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div>
+          <div style={{ color: C.text, fontWeight: 700, fontSize: 18 }}>{monthLabel}</div>
+          <div style={{ color: C.muted, fontSize: 13, marginTop: 2 }}>
+            {monthTx.length} transactions · {fmt(monthExpense)} spent · {fmt(monthSavings)} saved
+          </div>
+        </div>
+        <div style={{ textAlign: "right" }}>
+          <div style={{ color: C.muted, fontSize: 11, textTransform: "uppercase", letterSpacing: 1 }}>Net Worth</div>
+          <div style={{ color: netWorth >= 0 ? C.text : C.red, fontWeight: 700, fontSize: 20, fontFamily: "monospace" }}>{fmt(netWorth)}</div>
+        </div>
+      </div>
+
+      {/* ── EXPENSE BAR ── */}
+      {monthIncome > 0 && (
+        <Card style={{ padding: 16 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+            <span style={{ color: C.muted, fontSize: 12, textTransform: "uppercase", letterSpacing: 1 }}>Monthly Budget Usage</span>
+            <span style={{ color: C.text, fontSize: 12, fontWeight: 600 }}>{((monthExpense / monthIncome) * 100).toFixed(0)}% of income spent</span>
+          </div>
+          <div style={{ background: C.bg, borderRadius: 99, height: 12, overflow: "hidden", marginBottom: 10 }}>
+            <div style={{ display: "flex", height: "100%", borderRadius: 99, overflow: "hidden" }}>
+              <div style={{ width: `${Math.min((monthExpense / monthIncome) * 100, 100)}%`, background: monthExpense > monthIncome ? C.red : C.text, transition: "width 0.6s" }} />
+              <div style={{ width: `${Math.min((monthInvestment / monthIncome) * 100, 100 - (monthExpense / monthIncome) * 100)}%`, background: C.muted, transition: "width 0.6s" }} />
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 16, fontSize: 12 }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={{ width: 8, height: 8, borderRadius: 2, background: C.text, display: "inline-block" }} /><span style={{ color: C.muted }}>Spent {fmt(monthExpense)}</span></span>
+            <span style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={{ width: 8, height: 8, borderRadius: 2, background: C.muted, display: "inline-block" }} /><span style={{ color: C.muted }}>Invested {fmt(monthInvestment)}</span></span>
+            <span style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={{ color: C.green, fontWeight: 600 }}>Remaining {fmt(Math.max(monthIncome - monthExpense - monthInvestment, 0))}</span></span>
+          </div>
+        </Card>
+      )}
+
+      {/* ── CHARTS ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 16 }}>
-        {/* Income vs Expense vs Investment with range toggle */}
         <Card>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-            <div style={{ color: C.text, fontWeight: 700, fontSize: 16 }}>Income · Expense · Investment</div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <div style={{ color: C.text, fontWeight: 700, fontSize: 15 }}>Trend</div>
             <div style={{ display: "flex", gap: 4, background: C.bg, borderRadius: 8, padding: 3 }}>
               {["1m", "6m", "1y"].map(r => (
                 <button key={r} onClick={() => setChartRange(r)}
-                  style={{ padding: "4px 12px", border: "none", borderRadius: 6, cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 12, transition: "all 0.15s", background: chartRange === r ? C.accent : "transparent", color: chartRange === r ? C.bg : C.muted }}>
-                  {r === "1m" ? "1M" : r === "6m" ? "6M" : "1Y"}
+                  style={{ padding: "4px 10px", border: "none", borderRadius: 6, cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 11, background: chartRange === r ? C.text : "transparent", color: chartRange === r ? C.bg : C.muted }}>
+                  {r.toUpperCase()}
                 </button>
               ))}
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={220}>
+          <ResponsiveContainer width="100%" height={200}>
             <AreaChart data={chartData}>
               <defs>
                 <linearGradient id="gIncome" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={C.green} stopOpacity={0.3} />
-                  <stop offset="95%" stopColor={C.green} stopOpacity={0} />
+                  <stop offset="5%" stopColor={C.green} stopOpacity={0.2}/><stop offset="95%" stopColor={C.green} stopOpacity={0}/>
                 </linearGradient>
                 <linearGradient id="gExpense" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={C.red} stopOpacity={0.3} />
-                  <stop offset="95%" stopColor={C.red} stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="gInvest" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={C.purple} stopOpacity={0.3} />
-                  <stop offset="95%" stopColor={C.purple} stopOpacity={0} />
+                  <stop offset="5%" stopColor={C.red} stopOpacity={0.2}/><stop offset="95%" stopColor={C.red} stopOpacity={0}/>
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
-              <XAxis dataKey="month" stroke={C.muted} tick={{ fontSize: 11 }} />
-              <YAxis stroke={C.muted} tick={{ fontSize: 11 }} tickFormatter={v => `₹${v / 1000}k`} />
-              <Tooltip contentStyle={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10 }} formatter={v => fmt(v)} />
-              <Legend wrapperStyle={{ color: C.muted, fontSize: 12 }} />
-              <Area type="monotone" dataKey="income" stroke={C.green} fill="url(#gIncome)" strokeWidth={2} name="Income" />
-              <Area type="monotone" dataKey="expense" stroke={C.red} fill="url(#gExpense)" strokeWidth={2} name="Expense" />
-              <Area type="monotone" dataKey="investment" stroke={C.purple} fill="url(#gInvest)" strokeWidth={2} name="Investment" />
+              <XAxis dataKey="month" stroke={C.muted} tick={{ fontSize: 10 }} />
+              <YAxis stroke={C.muted} tick={{ fontSize: 10 }} tickFormatter={v => `₹${v/1000}k`} />
+              <Tooltip contentStyle={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8 }} formatter={v => fmt(v)} />
+              <Area type="monotone" dataKey="income" stroke={C.green} fill="url(#gIncome)" strokeWidth={1.5} name="Income" />
+              <Area type="monotone" dataKey="expense" stroke={C.red} fill="url(#gExpense)" strokeWidth={1.5} name="Expense" />
             </AreaChart>
           </ResponsiveContainer>
         </Card>
 
         <Card>
-          <div style={{ color: C.text, fontWeight: 700, marginBottom: 20, fontSize: 16 }}>Expense Breakdown</div>
-          <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-            <ResponsiveContainer width="50%" height={180}>
-              <PieChart>
-                <Pie data={expByCategory} cx="50%" cy="50%" innerRadius={45} outerRadius={75} dataKey="value" stroke="none">
-                  {expByCategory.map((_, i) => <Cell key={i} fill={C.chart[i % C.chart.length]} />)}
-                </Pie>
-                <Tooltip contentStyle={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10 }} formatter={v => fmt(v)} />
-              </PieChart>
-            </ResponsiveContainer>
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
-              {expByCategory.map((d, i) => (
-                <div key={d.name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: C.chart[i % C.chart.length] }} />
-                    <span style={{ color: C.muted, fontSize: 13 }}>{d.name}</span>
+          <div style={{ color: C.text, fontWeight: 700, marginBottom: 16, fontSize: 15 }}>
+            {monthLabel.split(" ")[0]} Expenses
+          </div>
+          {expByCategory.length === 0 ? (
+            <div style={{ color: C.muted, fontSize: 13, textAlign: "center", padding: "30px 0" }}>No expenses this month</div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {expByCategory.slice(0, 6).map((d, i) => {
+                const pct = ((d.value / monthExpense) * 100).toFixed(0);
+                const shade = `rgba(255,255,255,${0.9 - i * 0.12})`;
+                return (
+                  <div key={d.name}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                      <span style={{ color: C.muted, fontSize: 13 }}>{d.name}</span>
+                      <span style={{ color: C.text, fontSize: 13, fontFamily: "monospace" }}>{fmt(d.value)} <span style={{ color: C.muted }}>({pct}%)</span></span>
+                    </div>
+                    <div style={{ background: C.bg, borderRadius: 99, height: 4 }}>
+                      <div style={{ width: `${pct}%`, height: "100%", background: shade, borderRadius: 99, transition: "width 0.6s" }} />
+                    </div>
                   </div>
-                  <span style={{ color: C.text, fontSize: 13, fontFamily: "monospace" }}>{fmt(d.value)}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
-          </div>
+          )}
         </Card>
       </div>
 
-      {/* Savings Rate + Net Worth */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 16 }}>
-        <Card style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div style={{ color: C.text, fontWeight: 700, fontSize: 16 }}>Savings Rate</div>
-          <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 48, fontWeight: 800, color: savingsRate >= 20 ? C.green : savingsRate >= 10 ? C.yellow : C.red, fontFamily: "'DM Mono', monospace" }}>{savingsRate}%</div>
-            <div style={{ color: C.muted, fontSize: 13, marginTop: 4 }}>
-              {savingsRate >= 20 ? "🎉 Excellent saving habits!" : savingsRate >= 10 ? "👍 Good, aim for 20%+" : "⚠️ Try to save more"}
-            </div>
-          </div>
-          <div style={{ background: C.bg, borderRadius: 8, height: 8, overflow: "hidden" }}>
-            <div style={{ width: `${Math.min(savingsRate, 100)}%`, height: "100%", background: savingsRate >= 20 ? C.green : savingsRate >= 10 ? C.yellow : C.red, borderRadius: 8, transition: "width 0.6s ease" }} />
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between", color: C.muted, fontSize: 12 }}>
-            <span>0%</span><span>Target: 20%</span><span>100%</span>
-          </div>
-          {/* Investment rate mini stat */}
-          <div style={{ background: C.purple + "15", border: `1px solid ${C.purple}30`, borderRadius: 10, padding: "10px 14px" }}>
-            <div style={{ color: C.muted, fontSize: 12, marginBottom: 2 }}>Investment Rate</div>
-            <div style={{ color: C.purple, fontWeight: 700, fontSize: 18, fontFamily: "monospace" }}>
-              {totalIncome > 0 ? ((totalInvestment / totalIncome) * 100).toFixed(1) : 0}%
-            </div>
-          </div>
-        </Card>
-
-        <Card>
-          <div style={{ color: C.text, fontWeight: 700, marginBottom: 16, fontSize: 16 }}>Net Worth Overview</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 16 }}>
-            <div>
-              <div style={{ color: C.muted, fontSize: 12, marginBottom: 4 }}>Total Assets</div>
-              <div style={{ color: C.green, fontSize: 20, fontWeight: 700, fontFamily: "monospace" }}>{fmt(totalAssets)}</div>
-            </div>
-            <div>
-              <div style={{ color: C.muted, fontSize: 12, marginBottom: 4 }}>Total Liabilities</div>
-              <div style={{ color: C.red, fontSize: 20, fontWeight: 700, fontFamily: "monospace" }}>{fmt(totalLiabilities)}</div>
-            </div>
-            <div>
-              <div style={{ color: C.muted, fontSize: 12, marginBottom: 4 }}>Net Worth</div>
-              <div style={{ color: netWorth >= 0 ? C.accent : C.red, fontSize: 20, fontWeight: 700, fontFamily: "monospace" }}>{fmt(netWorth)}</div>
-            </div>
-          </div>
-          <ResponsiveContainer width="100%" height={100}>
-            <BarChart data={[{ name: "Assets", value: totalAssets }, { name: "Liabilities", value: totalLiabilities }, { name: "Net Worth", value: Math.max(netWorth, 0) }]} layout="vertical">
-              <XAxis type="number" stroke={C.muted} tick={{ fontSize: 11 }} tickFormatter={v => `₹${v / 1000}k`} />
-              <YAxis type="category" dataKey="name" stroke={C.muted} tick={{ fontSize: 12 }} width={80} />
-              <Tooltip contentStyle={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10 }} formatter={v => fmt(v)} />
-              <Bar dataKey="value" radius={[0, 6, 6, 0]}>
-                {[C.green, C.red, C.accent].map((c, i) => <Cell key={i} fill={c} />)}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </Card>
-      </div>
-
-      {/* Finance Insights */}
+      {/* ── NET WORTH MINI ── */}
       <Card>
-        <div style={{ color: C.text, fontWeight: 700, marginBottom: 16, fontSize: 16 }}>💡 Finance Insights</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 12 }}>
-          {[
-            { tip: `Your largest expense is Rent at ${fmt(data.transactions.filter(t => t.category === "Rent").reduce((s,t) => s+t.amount,0))}`, color: C.yellow },
-            { tip: `High-interest debt! Credit card at 36% APR — pay it first.`, color: C.red },
-            { tip: `Emergency fund target: ${fmt(totalExpense * 6)} (6 months expenses)`, color: C.accent },
-            { tip: `You invested ${fmt(totalInvestment)} this month — keep building wealth!`, color: C.purple },
-          ].map((item, i) => (
-            <div key={i} style={{ background: item.color + "10", border: `1px solid ${item.color}30`, borderRadius: 10, padding: "12px 16px", color: item.color, fontSize: 13, lineHeight: 1.5 }}>
-              {item.tip}
-            </div>
-          ))}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+          <div style={{ color: C.text, fontWeight: 700, fontSize: 15 }}>Net Worth</div>
+          <div style={{ color: netWorth >= 0 ? C.green : C.red, fontFamily: "monospace", fontWeight: 700, fontSize: 18 }}>{fmt(netWorth)}</div>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div style={{ background: C.bg, borderRadius: 10, padding: 14 }}>
+            <div style={{ color: C.muted, fontSize: 11, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Assets</div>
+            <div style={{ color: C.green, fontSize: 20, fontWeight: 700, fontFamily: "monospace" }}>{fmt(totalAssets)}</div>
+          </div>
+          <div style={{ background: C.bg, borderRadius: 10, padding: 14 }}>
+            <div style={{ color: C.muted, fontSize: 11, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Liabilities</div>
+            <div style={{ color: C.red, fontSize: 20, fontWeight: 700, fontFamily: "monospace" }}>{fmt(totalLiabilities)}</div>
+          </div>
+        </div>
+        <div style={{ marginTop: 12, background: C.bg, borderRadius: 99, height: 6, overflow: "hidden" }}>
+          <div style={{ width: `${totalAssets > 0 ? Math.min((netWorth / totalAssets) * 100, 100) : 0}%`, height: "100%", background: netWorth >= 0 ? C.green : C.red, borderRadius: 99, transition: "width 0.8s" }} />
+        </div>
+        <div style={{ color: C.muted, fontSize: 11, marginTop: 6 }}>
+          {totalAssets > 0 ? `${((netWorth / totalAssets) * 100).toFixed(1)}% net of assets` : "No assets yet"}
         </div>
       </Card>
     </div>
@@ -778,7 +772,7 @@ function Transactions({ data, setData }) {
         <h2 style={{ color: C.text, margin: 0, fontSize: 22, fontWeight: 700 }}>Transactions</h2>
         <div style={{ display: "flex", gap: 10 }}>
           <Btn variant="ghost" size="sm" onClick={() => setCatModal(true)}><Icon name="edit" size={14} color={C.muted} /> Categories</Btn>
-          <Btn onClick={() => setModal(true)}><Icon name="plus" size={16} color="#0A0E1A" /> Add</Btn>
+          <Btn onClick={() => setModal(true)}><Icon name="plus" size={16} color="#0A0A0A" /> Add</Btn>
         </div>
       </div>
 
@@ -857,7 +851,7 @@ function Transactions({ data, setData }) {
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <input value={newCat} onChange={e => setNewCat(e.target.value)} onKeyDown={e => e.key === "Enter" && addCustomCat()} placeholder="Add new category..." style={{ flex: 1, background: C.bg, border: `1px solid ${C.border}`, borderRadius: 10, padding: "10px 14px", color: C.text, fontSize: 14, outline: "none" }} />
-          <Btn onClick={addCustomCat}><Icon name="plus" size={15} color="#0A0E1A" /></Btn>
+          <Btn onClick={addCustomCat}><Icon name="plus" size={15} color="#0A0A0A" /></Btn>
         </div>
         <div style={{ color: C.muted, fontSize: 11, marginTop: 8 }}>Press Enter or click + to add</div>
       </Modal>
@@ -900,7 +894,17 @@ function Budget({ data, setData }) {
   const [modal, setModal] = useState(false);
   const [form, setForm] = useState({ category: "", limit: "" });
 
-  const getSpent = (cat) => data.transactions.filter(t => t.type === "expense" && t.category === cat).reduce((s, t) => s + t.amount, 0);
+  // Pull expense categories from actual transactions, not hardcoded list
+  const txExpenseCats = [...new Set(data.transactions.filter(t => t.type === "expense").map(t => t.category))].sort();
+  const custom = data.customCategories || {};
+  const allExpenseCats = [...new Set([...txExpenseCats, ...(custom.expense || []), ...EXPENSE_CATS])];
+
+  const thisMonth = today.getMonth();
+  const thisYear = today.getFullYear();
+  const getSpent = (cat) => data.transactions
+    .filter(t => t.type === "expense" && t.category === cat)
+    .filter(t => { const d = new Date(t.date); return d.getMonth() === thisMonth && d.getFullYear() === thisYear; })
+    .reduce((s, t) => s + t.amount, 0);
 
   const delBudget = (id) => setData(d => ({ ...d, budgets: d.budgets.filter(b => b.id !== id) }));
 
@@ -911,38 +915,50 @@ function Budget({ data, setData }) {
     setForm({ category: "", limit: "" });
   };
 
+  const monthLabel = today.toLocaleString("default", { month: "long" });
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h2 style={{ color: C.text, margin: 0, fontSize: 22, fontWeight: 700 }}>Budget Tracker</h2>
-        <Btn onClick={() => setModal(true)}><Icon name="plus" size={16} color="#0A0E1A" /> Set Budget</Btn>
+        <div>
+          <h2 style={{ color: C.text, margin: 0, fontSize: 20, fontWeight: 700 }}>Budget</h2>
+          <div style={{ color: C.muted, fontSize: 13, marginTop: 2 }}>{monthLabel} spending limits</div>
+        </div>
+        <Btn onClick={() => setModal(true)} size="sm"><Icon name="plus" size={14} color="#0A0A0A" /> Add</Btn>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
+      {data.budgets.length === 0 && (
+        <Card style={{ textAlign: "center", padding: "40px 20px" }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>💰</div>
+          <div style={{ color: C.text, fontWeight: 600, marginBottom: 6 }}>No budgets set</div>
+          <div style={{ color: C.muted, fontSize: 13, marginBottom: 20 }}>Set limits for your spending categories to track where your money goes.</div>
+          <Btn onClick={() => setModal(true)} size="sm"><Icon name="plus" size={14} color="#0A0A0A" /> Set First Budget</Btn>
+        </Card>
+      )}
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {data.budgets.map(b => {
           const spent = getSpent(b.category);
           const pct = Math.min((spent / b.limit) * 100, 100);
-          const status = pct >= 100 ? "over" : pct >= 80 ? "warn" : "ok";
-          const statusColor = status === "over" ? C.red : status === "warn" ? C.yellow : C.green;
+          const over = spent > b.limit;
+          const warn = pct >= 80;
+          const barColor = over ? C.red : warn ? C.yellow : C.text;
           return (
-            <Card key={b.id} style={{ gap: 16, display: "flex", flexDirection: "column" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ color: C.text, fontWeight: 600 }}>{b.category}</span>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <Badge color={statusColor}>{status === "over" ? "Over Budget!" : status === "warn" ? "Near Limit" : "On Track"}</Badge>
-                  <Btn variant="danger" size="sm" onClick={() => delBudget(b.id)}><Icon name="trash" size={13} color={C.red} /></Btn>
+            <Card key={b.id} style={{ padding: 16 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                <div>
+                  <span style={{ color: C.text, fontWeight: 600, fontSize: 15 }}>{b.category}</span>
+                  {over && <span style={{ marginLeft: 8, color: C.red, fontSize: 11, fontWeight: 600, background: C.red + "15", borderRadius: 4, padding: "1px 7px" }}>Over</span>}
+                  {!over && warn && <span style={{ marginLeft: 8, color: C.yellow, fontSize: 11, fontWeight: 600, background: C.yellow + "15", borderRadius: 4, padding: "1px 7px" }}>Near limit</span>}
                 </div>
+                <Btn variant="danger" size="sm" onClick={() => delBudget(b.id)}><Icon name="trash" size={12} color={C.red} /></Btn>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
-                <span style={{ color: C.muted }}>Spent: <span style={{ color: statusColor, fontWeight: 700 }}>{fmt(spent)}</span></span>
-                <span style={{ color: C.muted }}>Budget: <span style={{ color: C.text }}>{fmt(b.limit)}</span></span>
-              </div>
-              <div style={{ background: C.bg, borderRadius: 8, height: 10, overflow: "hidden" }}>
-                <div style={{ width: `${pct}%`, height: "100%", background: statusColor, borderRadius: 8, transition: "width 0.6s ease" }} />
+              <div style={{ background: C.bg, borderRadius: 99, height: 6, overflow: "hidden", marginBottom: 8 }}>
+                <div style={{ width: `${pct}%`, height: "100%", background: barColor, borderRadius: 99, transition: "width 0.6s" }} />
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: C.muted }}>
-                <span>{pct.toFixed(0)}% used</span>
-                <span>Remaining: {fmt(Math.max(b.limit - spent, 0))}</span>
+                <span style={{ color: barColor, fontWeight: 600 }}>{fmt(spent)} spent</span>
+                <span>{fmt(Math.max(b.limit - spent, 0))} left of {fmt(b.limit)}</span>
               </div>
             </Card>
           );
@@ -951,30 +967,33 @@ function Budget({ data, setData }) {
 
       {data.budgets.length > 0 && (
         <Card>
-          <div style={{ color: C.text, fontWeight: 700, marginBottom: 20, fontSize: 16 }}>Budget vs Actual</div>
-          <ResponsiveContainer width="100%" height={260}>
+          <div style={{ color: C.text, fontWeight: 700, marginBottom: 16, fontSize: 14 }}>Budget vs Actual ({monthLabel})</div>
+          <ResponsiveContainer width="100%" height={220}>
             <BarChart data={data.budgets.map(b => ({ name: b.category, Budget: b.limit, Spent: getSpent(b.category) }))}>
               <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
-              <XAxis dataKey="name" stroke={C.muted} tick={{ fontSize: 12 }} />
-              <YAxis stroke={C.muted} tick={{ fontSize: 12 }} tickFormatter={v => `₹${v / 1000}k`} />
-              <Tooltip contentStyle={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10 }} formatter={v => fmt(v)} />
-              <Legend wrapperStyle={{ color: C.muted }} />
-              <Bar dataKey="Budget" fill={C.accent + "50"} stroke={C.accent} radius={[4, 4, 0, 0]} />
-              <Bar dataKey="Spent" fill={C.red + "80"} stroke={C.red} radius={[4, 4, 0, 0]} />
+              <XAxis dataKey="name" stroke={C.muted} tick={{ fontSize: 11 }} />
+              <YAxis stroke={C.muted} tick={{ fontSize: 11 }} tickFormatter={v => `₹${v / 1000}k`} />
+              <Tooltip contentStyle={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8 }} formatter={v => fmt(v)} />
+              <Legend wrapperStyle={{ color: C.muted, fontSize: 12 }} />
+              <Bar dataKey="Budget" fill={C.surface} stroke={C.border} radius={[4, 4, 0, 0]} />
+              <Bar dataKey="Spent" fill={C.text} stroke={C.text} radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </Card>
       )}
 
-      <Modal open={modal} onClose={() => setModal(false)} title="Set Category Budget">
+      <Modal open={modal} onClose={() => setModal(false)} title="Set Budget">
         <Select label="Category" value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>
           <option value="">Select category</option>
-          {EXPENSE_CATS.map(c => <option key={c}>{c}</option>)}
+          {allExpenseCats.map(c => <option key={c}>{c}</option>)}
         </Select>
-        <Input label="Monthly Budget (₹)" type="number" placeholder="5000" value={form.limit} onChange={e => setForm(f => ({ ...f, limit: e.target.value }))} />
-        <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 8 }}>
-          <Btn variant="ghost" onClick={() => setModal(false)}>Cancel</Btn>
-          <Btn onClick={addBudget}>Set Budget</Btn>
+        <Input label="Monthly Limit (₹)" type="number" placeholder="5000" value={form.limit} onChange={e => setForm(f => ({ ...f, limit: e.target.value }))} />
+        <div style={{ color: C.muted, fontSize: 12, marginBottom: 16 }}>
+          {form.category && `You've spent ${fmt(getSpent(form.category))} on ${form.category} this month.`}
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <Btn variant="ghost" onClick={() => setModal(false)} style={{ flex: 1 }}>Cancel</Btn>
+          <Btn onClick={addBudget} style={{ flex: 2 }}>Set Budget</Btn>
         </div>
       </Modal>
     </div>
@@ -1040,7 +1059,7 @@ function Assets({ data, setData }) {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <h3 style={{ color: C.green, margin: 0, fontSize: 16 }}>Assets</h3>
             <Btn size="sm" onClick={() => { setForm({ name: "", category: allAssetCats[0], value: "", rate: "", note: "" }); setModal("asset"); }}>
-              <Icon name="plus" size={14} color="#0A0E1A" /> Add
+              <Icon name="plus" size={14} color="#0A0A0A" /> Add
             </Btn>
           </div>
           {[...data.assets].sort((a, b) => effectiveValue(b) - effectiveValue(a)).map(a => {
@@ -1078,7 +1097,7 @@ function Assets({ data, setData }) {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <h3 style={{ color: C.red, margin: 0, fontSize: 16 }}>Liabilities</h3>
             <Btn size="sm" onClick={() => { setForm({ name: "", category: allLiabCats[0], value: "", rate: "", note: "" }); setModal("liability"); }}>
-              <Icon name="plus" size={14} color="#0A0E1A" /> Add
+              <Icon name="plus" size={14} color="#0A0A0A" /> Add
             </Btn>
           </div>
           {data.liabilities.map(l => {
@@ -1229,9 +1248,9 @@ function Plans({ data, setData }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
 
       {/* ── Hero Banner ── */}
-      <div style={{ background: `linear-gradient(135deg, ${C.accent}20, ${C.purple}20)`, border: `1px solid ${C.accent}30`, borderRadius: 20, padding: "20px 20px 16px", position: "relative", overflow: "hidden" }}>
+      <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 20, padding: "20px 20px 16px", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: -30, right: -30, fontSize: 80, opacity: 0.15, transform: "rotate(15deg)", lineHeight: 1 }}>🚀</div>
-        <div style={{ color: C.accent, fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Your Financial Dream Board</div>
+        <div style={{ color: C.muted, fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Your Financial Dream Board</div>
         <div style={{ color: C.text, fontSize: 20, fontWeight: 800, marginBottom: 4 }}>
           {plans.goals.length === 0 ? "Start building your future today ✨" : `${plans.goals.filter(g => (g.savedAmount / g.targetAmount) >= 1).length} of ${plans.goals.length} goals achieved!`}
         </div>
@@ -1254,7 +1273,7 @@ function Plans({ data, setData }) {
           { id: "goals", label: "🎯 Goals", count: plans.goals.length },
           { id: "wishlist", label: "✨ Wishlist", count: plans.wishlist.length },
         ].map(t => (
-          <button key={t.id} onClick={() => setActiveTab(t.id)} style={{ flex: 1, padding: "10px 8px", border: "none", borderRadius: 10, cursor: "pointer", fontFamily: "inherit", fontWeight: 700, fontSize: 14, transition: "all 0.2s", background: activeTab === t.id ? C.accent : "transparent", color: activeTab === t.id ? "#0A0E1A" : C.muted }}>
+          <button key={t.id} onClick={() => setActiveTab(t.id)} style={{ flex: 1, padding: "10px 8px", border: "none", borderRadius: 10, cursor: "pointer", fontFamily: "inherit", fontWeight: 700, fontSize: 14, transition: "all 0.2s", background: activeTab === t.id ? C.text : "transparent", color: activeTab === t.id ? "#0A0A0A" : C.muted }}>
             {t.label} {t.count > 0 && <span style={{ background: activeTab === t.id ? "#0A0E1A30" : C.border, borderRadius: 99, padding: "0px 7px", fontSize: 11 }}>{t.count}</span>}
           </button>
         ))}
@@ -1265,7 +1284,7 @@ function Plans({ data, setData }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div style={{ color: C.muted, fontSize: 13 }}>{plans.goals.length === 0 ? "No goals yet" : `${plans.goals.length} goal${plans.goals.length > 1 ? "s" : ""}`}</div>
-            <Btn onClick={() => setGoalModal(true)} size="sm"><Icon name="plus" size={14} color="#0A0E1A" /> New Goal</Btn>
+            <Btn onClick={() => setGoalModal(true)} size="sm"><Icon name="plus" size={14} color="#0A0A0A" /> New Goal</Btn>
           </div>
 
           {plans.goals.length === 0 && (
@@ -1273,7 +1292,7 @@ function Plans({ data, setData }) {
               <div style={{ fontSize: 52, marginBottom: 12 }}>🎯</div>
               <div style={{ color: C.text, fontWeight: 700, fontSize: 16, marginBottom: 6 }}>Set your first goal</div>
               <div style={{ color: C.muted, fontSize: 13, marginBottom: 20, lineHeight: 1.5 }}>Emergency fund, new bike, vacation — whatever matters to you. Track it here.</div>
-              <Btn onClick={() => setGoalModal(true)}><Icon name="plus" size={15} color="#0A0E1A" /> Add Goal</Btn>
+              <Btn onClick={() => setGoalModal(true)}><Icon name="plus" size={15} color="#0A0A0A" /> Add Goal</Btn>
             </div>
           )}
 
@@ -1527,7 +1546,7 @@ function LoginPage({ onLogin }) {
         <div style={{ display: "flex", background: C.bg, borderRadius: 12, padding: 4, marginBottom: 28 }}>
           {["login", "signup"].map(t => (
             <button key={t} onClick={() => { setTab(t); setError(""); }}
-              style={{ flex: 1, padding: "10px", border: "none", borderRadius: 10, cursor: "pointer", fontWeight: 600, fontSize: 14, fontFamily: "inherit", transition: "all 0.2s", background: tab === t ? C.accent : "transparent", color: tab === t ? C.bg : C.muted }}>
+              style={{ flex: 1, padding: "10px", border: "none", borderRadius: 10, cursor: "pointer", fontWeight: 600, fontSize: 14, fontFamily: "inherit", transition: "all 0.2s", background: tab === t ? C.text : "transparent", color: tab === t ? C.bg : C.muted }}>
               {t === "login" ? "Sign In" : "Sign Up"}
             </button>
           ))}
@@ -1716,11 +1735,6 @@ export default function App() {
         ::-webkit-scrollbar-thumb { background: #1E2D42; border-radius: 4px; }
       `}</style>
 
-      {/* Background orbs */}
-      <Orb color={C.accent} size={500} top={-100} left={-100} opacity={0.07} />
-      <Orb color={C.purple} size={400} bottom={-100} right={-100} opacity={0.07} />
-      <Orb color={C.green} size={300} top="40%" left="40%" opacity={0.04} />
-
       {/* ── DESKTOP SIDEBAR ── */}
       {!isMobile && (
         <div style={{ width: 240, background: C.surface, borderRight: `1px solid ${C.border}`, display: "flex", flexDirection: "column", padding: "24px 16px", position: "fixed", top: 0, bottom: 0, left: 0, zIndex: 10 }}>
@@ -1731,7 +1745,7 @@ export default function App() {
           <nav style={{ flex: 1, display: "flex", flexDirection: "column", gap: 4 }}>
             {TABS.map(t => (
               <button key={t.id} onClick={() => setTab(t.id)}
-                style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 14px", borderRadius: 10, border: "none", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 14, transition: "all 0.15s", background: tab === t.id ? C.accent + "20" : "transparent", color: tab === t.id ? C.accent : C.muted, borderLeft: tab === t.id ? `3px solid ${C.accent}` : "3px solid transparent" }}>
+                style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 14px", borderRadius: 10, border: "none", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 14, transition: "all 0.15s", background: tab === t.id ? C.surface : "transparent", color: tab === t.id ? C.text : C.muted, borderLeft: tab === t.id ? `3px solid ${C.text}` : "3px solid transparent" }}>
                 <Icon name={t.icon} size={18} color={tab === t.id ? C.accent : C.muted} />
                 {t.label}
               </button>
@@ -1772,7 +1786,7 @@ export default function App() {
           <div style={{ position: "fixed", top: 57, left: 0, right: 0, background: C.surface, borderBottom: `1px solid ${C.border}`, zIndex: 45, padding: "8px 12px 16px" }}>
             {TABS.map(t => (
               <button key={t.id} onClick={() => handleTabChange(t.id)}
-                style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", padding: "13px 14px", borderRadius: 10, border: "none", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 15, marginBottom: 4, background: tab === t.id ? C.accent + "20" : "transparent", color: tab === t.id ? C.accent : C.muted }}>
+                style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", padding: "13px 14px", borderRadius: 10, border: "none", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 15, marginBottom: 4, background: tab === t.id ? C.surface : "transparent", color: tab === t.id ? C.text : C.muted }}>
                 <Icon name={t.icon} size={20} color={tab === t.id ? C.accent : C.muted} />
                 {t.label}
               </button>
@@ -1798,8 +1812,8 @@ export default function App() {
         <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50, background: C.surface, borderTop: `1px solid ${C.border}`, display: "flex", padding: "6px 0 calc(6px + env(safe-area-inset-bottom))" }}>
           {TABS.map(t => (
             <button key={t.id} onClick={() => handleTabChange(t.id)}
-              style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "6px 4px", border: "none", background: "transparent", cursor: "pointer", color: tab === t.id ? C.accent : C.muted, fontFamily: "inherit", transition: "all 0.15s" }}>
-              <div style={{ padding: "4px 12px", borderRadius: 10, background: tab === t.id ? C.accent + "20" : "transparent", transition: "all 0.15s" }}>
+              style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "6px 4px", border: "none", background: "transparent", cursor: "pointer", color: tab === t.id ? C.text : C.muted, fontFamily: "inherit", transition: "all 0.15s" }}>
+              <div style={{ padding: "4px 12px", borderRadius: 10, background: tab === t.id ? C.surface : "transparent", transition: "all 0.15s" }}>
                 <Icon name={t.icon} size={20} color={tab === t.id ? C.accent : C.muted} />
               </div>
               <span style={{ fontSize: 10, fontWeight: tab === t.id ? 700 : 500 }}>{t.label}</span>
